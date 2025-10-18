@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base target="_top">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <style>
+      html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: "IBM Plex Sans", sans-serif;
+        text-align: center;
+        overflow: hidden;
+      }
+
+      .container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        max-width: 90vw;
+      }
+
+      .logo {
+        width: 200px;
+        height: 200px;
+      }
+
+      h1 {
+        font-size: 1.2em;
+        margin: 0;
+      }
+
+      p {
+        margin: 0;
+        color: #666;
+        font-size: 0.9em;
+        max-width: 300px;
+      }
+      
+      #version-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .info-icon {
+        font-weight: bold;
+        cursor: help;
+        font-family: sans-serif;
+        margin-left: 8px;
+        display: none; 
+      }
+      .info-icon.success {
+        color: #155724; 
+      }
+      .info-icon.warning {
+        color: #f39c12; 
+      }
+      .info-icon.error {
+        color: #c0392b; 
+      }
+
+      .status {
+        margin-top: 5px;
+        padding: 8px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        display: none;
+        max-width: 300px;
+        word-wrap: break-word;
+      }
+
+      .success {
+        color: #155724;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <img class="logo" src="https://gist.githubusercontent.com/wpenistone/f7991896008abadb1848b62bd2a7d6c5/raw/2654749e094cc6efab44018976638f3123c41feb/Themis.svg" alt="THEMIS logo - Google Sheets administration utility">
+      <h1>THEMIS</h1>
+      <p>A Google Sheets-based administration utility for managing companymen, recruitment, and event logging.</p>
+      <p>Made by @wpenistone</p>
+      <p id="version-container">
+          <span id="version">Loading version...</span>
+          <span id="version-status-icon" class="info-icon" title="">ⓘ</span>
+      </p>
+      <div class="button-group">
+        <button id="clear-cache-btn" class="action" onclick="handleClearCache()">Clear Script Cache</button>
+      </div>
+      <div id="status-box" class="status"></div>
+    </div>
+    <script>
+      window.onload = function() {
+        google.script.run
+          .withSuccessHandler(function(data) {
+            document.getElementById('version').textContent = 'Version ' + data.currentVersion;
+            
+            const versionIcon = document.getElementById('version-status-icon');
+            versionIcon.title = data.statusMessage + '\n' + data.statusTooltip; 
+            versionIcon.className = 'info-icon ' + data.statusClass;
+            versionIcon.style.display = 'inline';
+          })
+          .withFailureHandler(function(error) {
+            console.error('Error getting version info:', error);
+            document.getElementById('version').textContent = 'Version unknown';
+            const versionIcon = document.getElementById('version-status-icon');
+            versionIcon.title = 'Could not check for updates.';
+            versionIcon.className = 'info-icon error';
+            versionIcon.style.display = 'inline';
+          })
+          .Clio_Refert_Historiam();
+      };
+
+      function handleClearCache() {
+        const btn = document.getElementById('clear-cache-btn');
+        const statusBox = document.getElementById('status-box');
+        btn.disabled = true;
+        btn.textContent = 'Clearing...';
+        statusBox.style.display = 'none';
+        google.script.run
+          .withSuccessHandler(function(message) {
+            btn.disabled = false;
+            btn.textContent = 'Clear Script Cache';
+            statusBox.textContent = message;
+            statusBox.className = 'status success';
+            statusBox.style.display = 'block';
+            setTimeout(function() {
+              google.script.host.close();
+            }, 2000);
+          })
+          .withFailureHandler(function(error) {
+            btn.disabled = false;
+            btn.textContent = 'Clear Script Cache';
+            statusBox.textContent = 'Error: ' + error.message;
+            statusBox.className = 'status error';
+            statusBox.style.display = 'block';
+          })
+          .clearAllCache();
+      }
+    </script>
+  </body>
+</html>

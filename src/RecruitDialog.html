@@ -1,0 +1,1664 @@
+<!doctype html>
+<html>
+  <head>
+    <base target="_top" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://ssl.gstatic.com/docs/script/css/add-ons1.css"
+    />
+    <script src="https://unpkg.com/imask"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: "IBM Plex Sans", sans-serif;
+        box-sizing: border-box;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+      form {
+        margin: 0;
+        padding: 0;
+      }
+      .outer-container {
+        padding: 0 16px 16px 16px;
+        height: 100%;
+        box-sizing: border-box;
+        overflow-y: hidden;
+      }
+      .inner-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      fieldset {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 16px;
+        margin: 0;
+      }
+      legend {
+        font-weight: bold;
+        font-size: 1.2em;
+        padding: 0 5px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      label {
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        text-align: left;
+      }
+      input::placeholder {
+        color: #999;
+        font-style: italic;
+      }
+      select {
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        text-align: center;
+      }
+      .placeholder-option {
+        color: #999;
+        font-style: italic;
+        font-weight: normal;
+      }
+      select:focus, textarea:focus, button:focus {
+
+          outline-offset: 2px;
+          border-color: #4285f4;
+          box-shadow: 0 0 3px rgba(66, 133, 244, 0.5)
+      }
+      .hidden {
+        display: none !important;
+      }
+      .info-icon {
+        color: #c0392b;
+        font-weight: bold;
+        cursor: help;
+        font-family: sans-serif;
+        margin-left: 8px;
+      }
+      .info-icon.warning {
+        color: #f39c12;
+      }
+      .button-group {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        margin-top: 30px;
+      }
+
+      #choice-buttons-container.button-group > button {
+        margin-left: 0;
+      }
+
+      .button-group button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px; 
+        font-weight: 500;
+        min-width: 80px;
+        border-radius: 4px;
+        box-sizing: border-box; 
+      }
+      button:disabled {
+        background-color: #ccc;
+        border-color: #ccc;
+        cursor: not-allowed;
+      }
+      .confirmation-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.85);
+        z-index: 100;
+      }
+      .confirmation-dialog {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      .confirmation-dialog p {
+        margin-bottom: 20px;
+      }
+
+      #recruit-squad-custom-container {
+        position: relative;
+      }
+      #recruit-squad-custom-toggle {
+        font-family: inherit;
+        color: #222;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px 25px 8px 8px;
+        cursor: pointer;
+        text-align: center;
+        position: relative;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #recruit-squad-custom-toggle.placeholder {
+        color: #999;
+        font-style: italic;
+      }
+      #recruit-squad-custom-toggle::after {
+        content: '';
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid #555;
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      #recruit-squad-custom-toggle:focus {
+
+        outline-offset: 2px;
+        border-color: #4285f4;
+        box-shadow: 0 0 3px rgba(66, 133, 244, 0.5);
+      }
+      #recruit-squad-custom-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-top: none;
+        z-index: 1001;
+        max-height: 250px;
+        overflow-y: auto;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      #recruit-squad-custom-list,
+      #recruit-squad-custom-list ul {
+        list-style: none; padding: 0; margin: 0; position: relative;
+      }
+      #recruit-squad-custom-list ul {
+        padding-left: 20px; background-color: #fff;
+      }
+      #recruit-squad-custom-list li {
+        padding: 8px 12px 8px 30px; cursor: pointer; position: relative; white-space: nowrap;
+      }
+      #recruit-squad-custom-list li:not(.unavailable-option):hover > span,
+      #recruit-squad-custom-list li.focused > span {
+        background-color: #f1f1f1;
+      }
+      #recruit-squad-custom-list li.focused > span {
+        background-color: #f1f1f1;
+      }
+      #recruit-squad-custom-list li > span {
+        position: relative; z-index: 1; display: inline-block; padding: 2px 4px; border-radius: 2px;
+        color: #222;
+      }
+      #recruit-squad-custom-list > li.top-level-item {
+        font-weight: 500; padding-left: 12px;
+      }
+      #recruit-squad-custom-list li:not(.top-level-item)::before,
+      #recruit-squad-custom-list li:not(.top-level-item)::after {
+        content: ''; position: absolute; background-color: #dcdcdc; z-index: 0;
+      }
+      #recruit-squad-custom-list li:not(.top-level-item)::before {
+        top: 0; left: 10px; width: 1px; height: 100%;
+      }
+      #recruit-squad-custom-list li:not(.top-level-item)::after {
+        top: 18px; left: 11px; width: 19px; height: 1px;
+      }
+      #recruit-squad-custom-list li:last-child::before {
+        height: 18px;
+      }
+      #recruit-squad-custom-list > li.top-level-item::before,
+      #recruit-squad-custom-list > li.top-level-item::after {
+        display: none;
+      }
+      #recruit-squad-custom-list li.unavailable-option > span {
+        color: #999;
+        font-style: italic;
+        cursor: not-allowed;
+      }
+      select.select-placeholder {
+        color: #999;
+        font-style: italic;
+      }
+      select.select-placeholder option {
+        color: #222;
+        font-style: normal;
+      }
+    </style>
+  </head>
+  <body role="dialog" aria-labelledby="recruit-dialog-title">
+    <div id="generic-confirmation-container" class="confirmation-container" role="alertdialog" aria-modal="true">
+      <div class="confirmation-dialog">
+        <p id="generic-confirmation-message"></p>
+        <div class="button-group">
+          <button class="action" id="generic-confirm-button">OK</button>
+          <button id="generic-cancel-button">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div id="spinner-container" style="display: flex; justify-content: center; align-items: center; flex-direction: column; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.9); z-index: 100;">
+      <p id="spinner-message">Initializing THEMIS...</p>
+    </div>
+    <div id="email-prompt-container" class="confirmation-container" style="z-index: 102" role="dialog" aria-labelledby="email-prompt-title" aria-modal="true">
+      <div class="confirmation-dialog">
+        <h3 id="email-prompt-title">Email Required</h3>
+        <p id="email-prompt-message"></p>
+        <form id="email-form" novalidate>
+          <div class="form-group" style="text-align: left; margin-top: 15px">
+            <label for="email-input-field">Email Address</label>
+            <input type="email" id="email-input-field" style="width: 100%; padding: 8px; box-sizing: border-box" required />
+          </div>
+          <div id="email-error-box" style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 4px; margin-top: 10px; display: none; text-align: left;" role="alert"></div>
+          <div class="button-group">
+            <button type="submit" class="action" id="email-confirm-button">Save</button>
+            <button type="button" id="email-cancel-button">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div
+      id="choice-prompt-container"
+      class="confirmation-container"
+      style="z-index: 102"
+      role="dialog"
+      aria-labelledby="choice-prompt-title"
+      aria-modal="true"
+    >
+      <div class="confirmation-dialog">
+        <h3 id="choice-prompt-title">Choose a Role</h3>
+        <p id="choice-prompt-message"></p>
+        <div id="choice-buttons-container" class="button-group" style="flex-direction: column; margin-top: 15px; align-items: stretch;">
+
+        </div>
+        <div class="button-group" style="margin-top: 20px;">
+           <button type="button" id="choice-cancel-button">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <main class="outer-container" id="main-container" style="display: none;">
+      <div id="dropdown-announcements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+      <form id="recruit-form" novalidate>
+        <fieldset>
+          <legend id="recruit-dialog-title">Recruit New Member</legend>
+          <div class="inner-container">
+            <div class="form-group">
+              <label for="player-name">Player Username <span id="player-name-info-icon" class="info-icon hidden" title="">ⓘ</span></label>
+              <input type="text" id="player-name" aria-required="true" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label for="discord-id">Discord User ID <span id="discord-id-info-icon" class="info-icon hidden" title="">ⓘ</span></label>
+              <input type="text" id="discord-id" aria-required="true" autocomplete="off" />
+            </div>
+            <div style="display: flex; gap: 15px">
+              <div class="form-group" style="flex-grow: 1">
+                <label for="rank-recruit">Recruit As <span id="rank-recruit-info-icon" class="info-icon warning hidden" title="">ⓘ</span></label>
+                <select id="rank-recruit" aria-required="true"></select>
+              </div>
+              <div class="form-group" style="flex-grow: 1">
+                <label for="region">Region <span id="region-info-icon" class="info-icon hidden" title="">ⓘ</span></label>
+                <select id="region" aria-required="true"></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="squad-recruit">Assign to Section <span id="squad-recruit-info-icon" class="info-icon hidden" title="">ⓘ</span></label>
+              <select id="squad-recruit" style="display: none;" aria-required="true"></select>
+              <div id="recruit-squad-custom-container" class="custom-select-container">
+                <button type="button" id="recruit-squad-custom-toggle" class="placeholder"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Select section"
+                        aria-activedescendant="">[ Select Section ]</button>
+                <div id="recruit-squad-custom-options" class="custom-select-options" role="listbox" style="display: none;" aria-label="Section options" aria-live="polite">
+                  <ul id="recruit-squad-custom-list" class="custom-select-list" role="presentation"></ul>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="recruiter">
+                Recruiter
+                <span id="recruiter-info-icon" class="info-icon hidden" title=""
+                  >ⓘ</span
+                >
+              </label>
+              <select id="recruiter" aria-required="true"></select>
+            </div>
+            <div class="form-group">
+              <label for="note">Note (Optional)</label>
+              <input type="text" id="note" autocomplete="off"/>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="button-group">
+          <button type="submit" class="action" id="submit-button">Recruit</button>
+        </div>
+      </form>
+
+      <fieldset id="custom-fields-fieldset" class="hidden" style="margin-top: 15px;">
+          <legend>Additional Information</legend>
+          <div id="custom-fields-container" class="inner-container">
+          </div>
+      </fieldset>
+    </main>
+    <script>
+      function debounce(func, delay) {
+        let timeout;
+        return (...args) => {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+      }
+      const App = {
+        state: {
+           userData: undefined,
+           allCompanymen: [],
+           allDiscordIds: [],
+           structure: {},
+           availabilityMap: {},   
+           totalSlotsMap: {},     
+           confirmationCallback: null,
+           timeInRankRequirements: {},
+           customFieldsConfig: [],
+           customFieldsUiEditable: false,
+           inputMasks: new Map(),
+           validationRules: {},
+           scrollPositionBeforeDropdown: null,
+           searchString: '',
+           searchTimeout: null,
+           selectedRankTitle: null,
+           choiceResolver: null,
+           sheetAccessConfig: {}, 
+        },
+        _checkEmailRequirement: function(selectedRank) {
+            const conditionConfig = this.state.emailRequirement;
+            const rankHierarchy = this.state.rankHierarchy;
+
+            if (!conditionConfig || !conditionConfig.CONDITION) return false;
+
+            const condition = conditionConfig.CONDITION.trim();
+            const selectedRankIndex = rankHierarchy.findIndex(r => r.name === selectedRank);
+            if (selectedRankIndex === -1) return false;
+
+            if (condition.includes(',')) {
+                const requiredRanks = condition.split(',').map(r => r.trim().toUpperCase());
+                const selectedRankInfo = rankHierarchy[selectedRankIndex];
+                const selectedRankNames = [selectedRankInfo.name.toUpperCase()];
+                if (selectedRankInfo.abbr) selectedRankNames.push(selectedRankInfo.abbr.toUpperCase());
+                return requiredRanks.some(reqRank => selectedRankNames.includes(reqRank));
+            }
+
+            const match = condition.match(/^(>=|<=|>|<|=)?\s*(.*)$/);
+            if (!match) return false;
+
+            const operator = match[1] || '>=';
+            const rankName = match[2];
+
+            const compareRankIndex = rankHierarchy.findIndex(r => r.name.toUpperCase() === rankName.toUpperCase() || (r.abbr && r.abbr.toUpperCase() === rankName.toUpperCase()));
+            if (compareRankIndex === -1) return false;
+
+            switch (operator) {
+                case '>=': return selectedRankIndex >= compareRankIndex;
+                case '>':  return selectedRankIndex > compareRankIndex;
+                case '<=': return selectedRankIndex <= compareRankIndex;
+                case '<':  return selectedRankIndex < compareRankIndex;
+                case '=':  return selectedRankIndex === compareRankIndex;
+                default:   return false;
+            }
+        },
+        elements: {},
+        init: function() {
+            this._cacheDOMElements();
+            this._addEventListeners();
+            this.elements.submitButton.disabled = true;
+
+            if (this.elements.spinnerMessage) this.elements.spinnerMessage.textContent = 'Initializing THEMIS...';
+            if (this.elements.spinner) this.elements.spinner.style.display = 'flex'; 
+
+            google.script.run
+                .withSuccessHandler(this._onInitialDataLoaded.bind(this))
+                .withFailureHandler(this.handleInitialError.bind(this))
+                .Apollo_Illuminat_Dilectum();
+
+
+            const select = this.elements.regionSelect;
+            select.innerHTML = '';
+                    
+            const placeholder = new Option('[ Select Region ]', '');
+            placeholder.classList.add('placeholder-option');
+            select.appendChild(placeholder);
+            select.classList.add('select-placeholder');
+                    
+            const regions = <?!= JSON.stringify(THEMIS_CONFIG.REGIONS) ?> || [];
+            regions.forEach(r => select.appendChild(new Option(r, r)));
+                    
+            select.value = ''; 
+},
+
+
+_checkAndFinalizeSetup: function() {
+  if (this.state.allCompanymen.length === 0 || this.state.rankHierarchy.length === 0) {
+    return;
+  }
+
+  this._populateRankSelector(this.state.rankHierarchy); 
+
+  const userData = this.state.userData;
+  let shouldAutoSelect = false;
+  if (userData && this.state.emailRequirementRank) {
+      const userRankIndex = this.state.rankHierarchy.findIndex(r => r.name === userData.rank);
+      const leaderMinRankIndex = this.state.rankHierarchy.findIndex(r => r.name === this.state.emailRequirementRank);
+      if (userRankIndex !== -1 && leaderMinRankIndex !== -1 && userRankIndex >= leaderMinRankIndex) {
+          shouldAutoSelect = true;
+      }
+  }
+
+  const userLocation = this.state.userData?.location;
+  let userPath = '';
+  const findUserPath = (nodes, currentPath = '') => {
+      for (const node of nodes) {
+          const newPath = currentPath ? `${currentPath}>${node.name}` : node.name;
+          if (node.name === userLocation) { userPath = newPath; return; }
+          if (node.children && userPath.length === 0) findUserPath(node.children, newPath);
+      }
+  };
+
+  if (userLocation && this.state.structure.hierarchy) {
+      findUserPath(this.state.structure.hierarchy);
+      this._sortHierarchyForUserDisplay(this.state.structure.hierarchy, userPath);
+      this.state.userData.locationPath = userPath;
+      this._populateRecruiterSelector(this.state.recruiters, userPath);
+  } else {
+      this._populateRecruiterSelector(this.state.recruiters, '');
+  }
+
+  this._populateSquadSelector(this.state.structure.hierarchy);
+  
+
+
+  if (this.state.userData) {
+      if (this.state.recruiters.some(r => r.player === this.state.userData.player)) {
+          this.elements.recruiterSelect.value = this.state.userData.player;
+          this.elements.recruiterSelect.classList.remove('select-placeholder');
+      }
+      if (shouldAutoSelect) {
+       if (this.state.userData.locationPath) {
+         const userPath = this.state.userData.locationPath;
+         const availableSquadsInPath = Array.from(this.elements.recruitSquadCustomList.querySelectorAll('li[data-value]:not(.unavailable-option)'));
+         const squadToSelect = availableSquadsInPath.find(li => li.dataset.value.startsWith(userPath));
+         if (squadToSelect) {
+           this.selectSquad(squadToSelect.dataset.value);
+         }
+       }
+     }
+  }
+
+  this.updateSquadAvailability();
+  this.updateTirWarning();
+  this.validateAndToggleButton();
+
+  if (this.elements.spinner) this.elements.spinner.style.display = 'none';
+  if (this.elements.mainContainer) this.elements.mainContainer.style.display = 'block';
+},
+
+_cacheDOMElements: function() {
+  const get = (id) => document.getElementById(id);
+  this.elements = {
+    spinner: get('spinner-container'),
+    spinnerMessage: get('spinner-message'),
+    mainContainer: get('main-container'),
+    recruitForm: get('recruit-form'), submitButton: get('submit-button'),
+    playerNameInput: get('player-name'), playerNameInfoIcon: get('player-name-info-icon'),
+    discordIdInput: get('discord-id'), discordIdInfoIcon: get('discord-id-info-icon'),
+    rankSelect: get('rank-recruit'), rankRecruitInfoIcon: get('rank-recruit-info-icon'),
+    regionSelect: get('region'), regionInfoIcon: get('region-info-icon'), 
+    squadSelect: get('squad-recruit'), squadRecruitInfoIcon: get('squad-recruit-info-icon'), 
+    recruiterSelect: get('recruiter'), recruiterInfoIcon: get('recruiter-info-icon'),
+    noteInput: get('note'),
+    confirmationContainer: get('generic-confirmation-container'), confirmButton: get('generic-confirm-button'),
+    cancelButton: get('generic-cancel-button'), confirmationMessage: get('generic-confirmation-message'),
+    recruitSquadCustomContainer: get('recruit-squad-custom-container'), recruitSquadCustomToggle: get('recruit-squad-custom-toggle'),
+    recruitSquadCustomOptions: get('recruit-squad-custom-options'), recruitSquadCustomList: get('recruit-squad-custom-list'),
+    outerContainer: get('main-container'), 
+    emailPromptContainer: get('email-prompt-container'),
+    emailPromptMessage: get('email-prompt-message'),
+    emailInputField: get('email-input-field'),
+    emailForm: get('email-form'),
+    emailErrorBox: get('email-error-box'),
+    emailConfirmButton: get('email-confirm-button'),
+    emailCancelButton: get('email-cancel-button'),
+    customFieldsContainer: get('custom-fields-container'),
+    customFieldsFieldset: get('custom-fields-fieldset'),
+    choicePromptContainer: get('choice-prompt-container'),
+    choicePromptTitle: get('choice-prompt-title'),
+    choicePromptMessage: get('choice-prompt-message'),
+    choiceButtonsContainer: get('choice-buttons-container'),
+    choiceCancelButton: get('choice-cancel-button'),
+  };
+},
+        _applyMask: function(element, maskOptions) {
+            if (!element) return;
+            if (this.state.inputMasks.has(element.id)) {
+                this.state.inputMasks.get(element.id).destroy();
+            }
+            const mask = IMask(element, maskOptions);
+            this.state.inputMasks.set(element.id, mask);
+        },
+        _ensureElementIsVisible: function(container, element) {
+          setTimeout(() => {
+            if (!element || element.style.display === 'none') return;
+            const containerRect = container.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+
+            if (elementRect.bottom > containerRect.bottom) {
+              const scrollAmount = elementRect.bottom - containerRect.bottom;
+              container.scrollBy({
+                top: scrollAmount + 10,
+                behavior: 'smooth'
+              });
+            }
+          }, 0);
+        },
+
+        setFormInteractionEnabled: function(enabled) {
+          this.elements.playerNameInput.disabled = !enabled;
+          this.elements.discordIdInput.disabled = !enabled;
+          this.elements.rankSelect.disabled = !enabled;
+          this.elements.regionSelect.disabled = !enabled;
+          this.elements.squadSelect.disabled = !enabled;
+          this.elements.recruitSquadCustomToggle.disabled = !enabled;
+          this.elements.recruiterSelect.disabled = !enabled;
+          this.elements.noteInput.disabled = !enabled;
+
+          if (!enabled) {
+              this.elements.submitButton.disabled = true;
+          } else {
+              this.validateAndToggleButton();
+          }
+        },
+        _addEventListeners: function() {
+  this.elements.recruitForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    this.submitRecruitForm();
+  });
+  this.elements.confirmButton.addEventListener('click', () => {
+    if (this.state.confirmationCallback) this.state.confirmationCallback(true);
+  });
+  this.elements.cancelButton.addEventListener('click', () => {
+    if (this.state.confirmationCallback) this.state.confirmationCallback(false);
+  });
+  this.elements.customFieldsContainer.addEventListener('input', debounce(() => this.validateAndToggleButton(), 400));
+  
+  const textInputs = ['playerNameInput', 'discordIdInput'];
+  textInputs.forEach(key => {
+    this.elements[key].addEventListener('input', debounce(() => this.validateAndToggleButton(), 400));
+  });
+
+  const selectsToValidate = ['regionSelect', 'recruiterSelect'];
+  selectsToValidate.forEach(key => {
+    this.elements[key].addEventListener('change', () => this.validateAndToggleButton());
+  });
+  
+  this.elements.rankSelect.addEventListener('change', () => {
+      this.validateAndToggleButton();
+      this.updateSquadAvailability();
+      this.updateTirWarning();
+  });
+
+  this._applyMask(this.elements.discordIdInput, {
+      mask: '<@num>',
+      blocks: {
+          num: {
+              mask: Number,
+              min: 0,
+              max: 9999999999999999999,
+              thousandsSeparator: ''
+          }
+      },
+      lazy: false
+  });
+  const usernameRules = this.state.validationRules.USERNAME;
+  if (usernameRules && usernameRules.REGEX) {
+    this._applyMask(this.elements.playerNameInput, {
+      mask: new RegExp(usernameRules.REGEX)
+    });
+  }
+
+  this.elements.recruitSquadCustomToggle.addEventListener('click', () => this.toggleDropdown('squad'));
+  this.elements.recruitSquadCustomList.addEventListener('click', (e) => this.handleSquadTreeClick(e));
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#recruit-squad-custom-container')) this.closeDropdown('squad');
+  });
+
+    this.elements.recruitSquadCustomToggle.addEventListener('keydown', (e) => {
+    const handleNavigation = (direction) => {
+      const list = this.elements.recruitSquadCustomList;
+      const options = Array.from(list.querySelectorAll('li[role="option"]:not(.unavailable-option)'))
+                           .filter(li => li.offsetParent !== null);
+      if (options.length === 0) return;
+
+      const current = list.querySelector('.focused');
+      let currentIndex = current ? options.indexOf(current) : -1;
+
+      if (current) current.classList.remove('focused');
+      currentIndex += direction;
+      if (currentIndex >= options.length) currentIndex = 0;
+      if (currentIndex < 0) currentIndex = options.length - 1;
+
+      const newFocused = options[currentIndex];
+      if (newFocused) {
+        newFocused.classList.add('focused');
+        this.elements.recruitSquadCustomToggle.setAttribute('aria-activedescendant', newFocused.id || '');
+        newFocused.scrollIntoView({ block: 'nearest' });
+      }
+    };
+
+    switch(e.key) {
+      case 'ArrowDown':
+      case 'ArrowUp':
+        e.preventDefault();
+        if (this.elements.recruitSquadCustomOptions.style.display !== 'block') {
+          this.openDropdown('squad');
+        }
+        handleNavigation(e.key === 'ArrowDown' ? 1 : -1);
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        const isOpen = this.elements.recruitSquadCustomOptions.style.display === 'block';
+        if (isOpen) {
+            const focused = this.elements.recruitSquadCustomList.querySelector('.focused');
+            if (focused) focused.click();
+            this.closeDropdown('squad');
+        } else {
+          this.openDropdown('squad');
+        }
+        break;
+      case 'Escape':
+        this.closeDropdown('squad');
+        break;
+    }
+  });
+
+  this.elements.recruitSquadCustomToggle.addEventListener('wheel', this.handleRecruitSquadWheel.bind(this), { passive: false });
+  this.elements.recruitSquadCustomOptions.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      this.elements.recruitSquadCustomOptions.scrollTop += e.deltaY;
+  }, { passive: false });
+
+  [this.elements.rankSelect, this.elements.regionSelect, this.elements.recruiterSelect].forEach(sel => {
+    sel.addEventListener('change', () => {
+      if (sel.value) {
+        sel.classList.remove('select-placeholder');
+      } else {
+        sel.classList.add('select-placeholder');
+      }
+    });
+  });
+
+  [this.elements.rankSelect, this.elements.regionSelect, this.elements.recruiterSelect].forEach(sel => {
+    sel.addEventListener('wheel', this._cycleSelectOptionOnWheel.bind(this), { passive: false });
+  });
+  this._addChoiceEventListener();
+},
+                _validateCustomFields: function() {
+            let allValid = true;
+            if (!this.state.customFieldsUiEditable) return true;
+
+            this.state.customFieldsConfig.forEach(field => {
+                const input = document.getElementById(`cf-${field.key}`);
+                if (!input) return;
+
+                const isFieldRequired = field.required;
+                const hasValue = input.value.trim() !== '';
+
+                if (isFieldRequired && !hasValue) {
+                    input.style.borderColor = '#c0392b';
+                    allValid = false;
+                } else {
+                    input.style.borderColor = ''; 
+                }
+            });
+            return allValid;
+        },
+        handleRecruitSquadWheel: function(event) {
+            if (this.elements.recruitSquadCustomOptions.style.display === 'block') {
+                return;
+            }
+            event.preventDefault();
+            const select = this.elements.squadSelect;
+
+            const validOptions = this._getValidSquadOptions();
+            if (validOptions.length <= 1) return;
+
+            const currentValidIndex = validOptions.findIndex(li => li.dataset.value === select.value);
+            const direction = event.deltaY > 0 ? 1 : -1;
+
+            let nextValidIndex = (currentValidIndex !== -1 ? currentValidIndex : -1) + direction;
+
+            if (nextValidIndex >= validOptions.length) {
+                nextValidIndex = 0;
+            }
+            if (nextValidIndex < 0) {
+                nextValidIndex = validOptions.length - 1;
+            }
+
+            const nextValue = validOptions[nextValidIndex].dataset.value;
+            this.selectSquad(nextValue);
+        },
+        _cycleSelectOptionOnWheel: function(event) {
+           event.preventDefault();
+           const select = event.target;
+           const options = select.options;
+           if (options.length <= 1) return;
+
+           const direction = event.deltaY > 0 ? 1 : -1;
+           let newIndex = select.selectedIndex;
+           let attempts = 0;
+           do {
+             newIndex = (newIndex + direction + options.length) % options.length;
+             attempts++;
+             if (attempts > options.length) return;
+           } while (options[newIndex].disabled || options[newIndex].value === "");
+
+           select.selectedIndex = newIndex;
+           select.dispatchEvent(new Event('change'));
+         },
+        _getValidSquadOptions: function() {
+            const list = this.elements.recruitSquadCustomList;
+            return Array.from(list.querySelectorAll('li[data-value]')).filter(li => {
+                return !li.classList.contains('unavailable-option');
+            });
+        },
+        getTotalSlotsForRank: function(path, rank) { 
+            const totalNodeSlots = this.state.totalSlotsMap[path];
+            if (!totalNodeSlots) return 0;
+
+            const rankUpper = rank.toUpperCase();
+            let total = totalNodeSlots[rankUpper] || 0;
+
+            const titledSlots = totalNodeSlots._titledSlots?.[rankUpper];
+            if (titledSlots) {
+                total += Object.values(titledSlots).reduce((sum, count) => sum + count, 0);
+            }
+            return total;
+        },
+
+        _sortHierarchyForUserDisplay: function(nodes, userPath, currentFullPath = '') {
+          if (!nodes || nodes.length === 0) {
+            return;
+          }
+
+          nodes.sort((a, b) => {
+            const aFullPath = currentFullPath ? `${currentFullPath}>${a.name}` : a.name;
+            const bFullPath = currentFullPath ? `${currentFullPath}>${b.name}` : b.name;
+
+            const aIsInUserPath = userPath.startsWith(aFullPath);
+            const bIsInUserPath = userPath.startsWith(bFullPath);
+
+            if (aIsInUserPath && !bIsInUserPath) return -1;
+            if (!bIsInUserPath && aIsInUserPath) return 1;
+
+            return a.name.localeCompare(b.name);
+          });
+
+          nodes.forEach(node => {
+            const nodeFullPath = currentFullPath ? `${currentFullPath}>${node.name}` : node.name;
+            if (node.children) {
+              this._sortHierarchyForUserDisplay(node.children, userPath, nodeFullPath);
+            }
+          });
+        },
+        _onInitialDataLoaded: function(data) {
+            this.state.allCompanymen = data.allCompanymen || [];
+            this.state.allDiscordIds = data.allDiscordIds || [];
+            this.state.structure = data.structure || {};
+            this.state.structure.hierarchy = data.hierarchy;
+            this.state.availabilityMap = data.availabilityMap || {};
+            this.state.totalSlotsMap = data.totalSlotsMap || {}; 
+            this.state.timeInRankRequirements = data.timeInRankRequirements || {};
+            this.state.allLocations = data.allLocations || [];
+            this.state.rankHierarchy = <?!= JSON.stringify(THEMIS_CONFIG.RANK_HIERARCHY) ?> || [];
+            this.state.emailRequirementRank = "<?!= THEMIS_CONFIG.LOGIC_THRESHOLDS.EMAIL_REQUIRED_MIN_RANK.RANK ?>";
+            this.state.emailRequirement = data.emailRequirement || {};
+            this.state.recruiters = data.recruiters || [];
+            this.state.customFieldsConfig = data.customFieldsConfig || [];
+            this.state.customFieldsUiEditable = data.customFieldsUiEditable || false;
+            this.state.validationRules = data.validationRules || {};
+
+            this.state.sheetAccessConfig = data.sheetAccessConfig || {};
+            this.state.userData = data.userData || null; 
+
+            this._checkAndFinalizeSetup();
+        },
+        showEmailError: function(message) {
+          this.elements.emailErrorBox.textContent = message;
+          this.elements.emailErrorBox.style.display = 'block';
+        },
+
+        promptForEmail: function() {
+          return new Promise((resolve) => {
+            const prompt = this.state.emailRequirement.PROMPT || "An email is required for this action. Please provide one.";
+            this.elements.emailPromptMessage.textContent = prompt;
+            this.elements.emailInputField.value = '';
+            this.elements.emailErrorBox.style.display = 'none';
+            this.elements.emailPromptContainer.style.display = 'flex';
+            this.elements.emailInputField.focus();
+
+            const submitHandler = (e) => {
+              e.preventDefault();
+              const email = this.elements.emailInputField.value.trim();
+              if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                this.showEmailError("Please enter a valid email address.");
+                return;
+              }
+              cleanup();
+              resolve(email);
+            };
+
+            const cancelHandler = () => {
+              cleanup();
+              resolve(null);
+            };
+
+            const cleanup = () => {
+              this.elements.emailForm.removeEventListener('submit', submitHandler);
+              this.elements.emailCancelButton.removeEventListener('click', cancelHandler);
+              this.elements.emailPromptContainer.style.display = 'none';
+            };
+
+            this.elements.emailForm.addEventListener('submit', submitHandler);
+            this.elements.emailCancelButton.addEventListener('click', cancelHandler);
+          });
+        } ,
+        _addChoiceEventListener: function() {
+           this.elements.choiceCancelButton.addEventListener('click', () => {
+              this.elements.choicePromptContainer.style.display = 'none';
+              if (this.state.choiceResolver) {
+                  this.state.choiceResolver(null); 
+                  this.state.choiceResolver = null;
+              }
+           });
+        },
+
+        promptForChoice: function(title, message, choices, currentChoice = null) {
+            return new Promise((resolve) => {
+                this.state.choiceResolver = resolve;
+                this.elements.choicePromptTitle.textContent = title;
+                this.elements.choicePromptMessage.textContent = message;
+
+                const buttonContainer = this.elements.choiceButtonsContainer;
+                buttonContainer.innerHTML = '';
+
+                choices.forEach(choice => {
+                    const button = document.createElement('button');
+                    button.textContent = choice;
+                    button.className = 'action';
+                    button.style.marginBottom = '5px';
+
+                    if (choice === currentChoice) {
+                        button.disabled = true;
+                        button.textContent += ' (Current)';
+                    }
+
+                    button.onclick = () => {
+                        this.elements.choicePromptContainer.style.display = 'none';
+                        if (this.state.choiceResolver) {
+                            this.state.choiceResolver(choice);
+                            this.state.choiceResolver = null;
+                        }
+                    };
+                    buttonContainer.appendChild(button);
+                });
+
+                this.elements.choicePromptContainer.style.display = 'flex';
+            });
+        },
+
+        toggleDropdown: function(type) {
+            const optionsEl = type === 'squad' ? this.elements.recruitSquadCustomOptions : null;
+            if (!optionsEl) return;
+            if (optionsEl.style.display === 'block') this.closeDropdown(type);
+            else this.openDropdown(type);
+        },
+        openDropdown: function(type) {
+            const toggleEl = type === 'squad' ? this.elements.recruitSquadCustomToggle : null;
+            const optionsEl = type === 'squad' ? this.elements.recruitSquadCustomOptions : null;
+            if (!toggleEl || !optionsEl) return;
+            optionsEl.style.display = 'block';
+            toggleEl.setAttribute('aria-expanded', 'true');
+
+            this.state.scrollPositionBeforeDropdown = this.elements.mainContainer.scrollTop;
+
+            this._ensureElementIsVisible(this.elements.mainContainer, optionsEl);
+
+            this.boundSquadKeyDown = (e) => this.handleTreeKeyDown(e, this.elements.recruitSquadCustomList, () => this.closeDropdown('squad'));
+            document.addEventListener('keydown', this.boundSquadKeyDown);
+
+            const items = Array.from(this.elements.recruitSquadCustomList.querySelectorAll('li[role="option"]')).filter(li => li.offsetParent !== null);
+            const selectedItem = items.find(item => item.getAttribute('aria-selected') === 'true');
+            const firstItem = items[0];
+
+            if (selectedItem) {
+                selectedItem.classList.add('focused');
+                selectedItem.scrollIntoView({ block: 'nearest' });
+                toggleEl.setAttribute('aria-activedescendant', selectedItem.id || '');
+            } else if (firstItem) {
+                firstItem.classList.add('focused');
+                firstItem.scrollIntoView({ block: 'nearest' });
+                toggleEl.setAttribute('aria-activedescendant', firstItem.id || '');
+            }
+        },
+        closeDropdown: function(type) {
+            const toggleEl = type === 'squad' ? this.elements.recruitSquadCustomToggle : null;
+            const optionsEl = type === 'squad' ? this.elements.recruitSquadCustomOptions : null;
+            if (!toggleEl || !optionsEl) return;
+
+            if (optionsEl.style.display === 'block') {
+                if (this.state.scrollPositionBeforeDropdown !== null) {
+                    this.elements.mainContainer.scrollTop = this.state.scrollPositionBeforeDropdown;
+                    this.state.scrollPositionBeforeDropdown = null; 
+                }
+
+                optionsEl.style.display = 'none';
+                toggleEl.setAttribute('aria-expanded', 'false');
+                toggleEl.removeAttribute('aria-activedescendant');
+                if (this.boundSquadKeyDown) {
+                    document.removeEventListener('keydown', this.boundSquadKeyDown);
+                    this.boundSquadKeyDown = null;
+                }
+                const focused = this.elements.recruitSquadCustomList.querySelector('.focused');
+                if (focused) {
+                    focused.classList.remove('focused');
+                }
+            }
+        },
+
+        
+        selectSquad: function(value) {
+            const selectedLi = this.elements.recruitSquadCustomList.querySelector(`li[data-value="${value}"]`);
+            if (!selectedLi) return;
+
+            this.elements.recruitSquadCustomList.querySelectorAll('li[role="option"]').forEach(li => {
+                li.setAttribute('aria-selected', 'false');
+            });
+            selectedLi.setAttribute('aria-selected', 'true');
+
+            this.elements.squadSelect.value = value;
+            this.elements.recruitSquadCustomToggle.textContent = selectedLi.querySelector('span').textContent.replace(/\s\(.*\)/, '');
+            this.elements.recruitSquadCustomToggle.classList.remove('placeholder');
+            this.elements.recruitSquadCustomToggle.setAttribute('aria-activedescendant', selectedLi.id || '');
+            this.closeDropdown('squad');
+            
+            this.validateAndToggleButton(); 
+        },
+        handleTreeKeyDown: function(event, list, closeCallback) {
+            const current = list.querySelector('.focused');
+            const items = Array.from(list.querySelectorAll('li[role="option"]:not(.unavailable-option)'));
+            if (items.length === 0) return;
+
+            if (event.key.length === 1 && event.key.match(/[a-z0-9\s]/i)) {
+                event.preventDefault();
+                clearTimeout(this.state.searchTimeout);
+                this.state.searchString += event.key.toLowerCase();
+                this.state.searchTimeout = setTimeout(() => { this.state.searchString = ''; }, 700);
+
+                const startIndex = current ? items.indexOf(current) + 1 : 0;
+
+                for (let i = 0; i < items.length; i++) {
+                    const itemIndex = (startIndex + i) % items.length;
+                    const item = items[itemIndex];
+                    const itemText = item.querySelector('span').textContent.trim().toLowerCase();
+
+                    if (itemText.startsWith(this.state.searchString)) {
+                        if (current) current.classList.remove('focused');
+                        item.classList.add('focused');
+                        item.scrollIntoView({ block: 'nearest' });
+                        this.elements.recruitSquadCustomToggle.setAttribute('aria-activedescendant', item.id || '');
+                        return;
+                    }
+                }
+                return;
+            }
+
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    this.navigateSquadOptions(1);
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    this.navigateSquadOptions(-1);
+                    break;
+                case 'Enter':
+                    event.preventDefault();
+                    if (current) current.click();
+                    break;
+                case 'Escape':
+                case 'Tab':
+                    event.preventDefault();
+                    closeCallback();
+                    break;
+            }
+        },
+        handleSquadTreeClick: function(e) {
+            const li = e.target.closest('li');
+            if (!li) return;
+
+            if (li.dataset.value && !li.classList.contains('unavailable-option')) {
+                this.selectSquad(li.dataset.value);
+            }
+        },
+
+        _populateRecruiterSelector: function(recruiters, userPath) { 
+            const select = this.elements.recruiterSelect;
+            select.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '[ Select Recruiter ]';
+            select.classList.add('select-placeholder');
+            placeholder.classList.add('placeholder-option');
+            select.appendChild(placeholder);
+
+            recruiters.sort((a, b) => {
+                const aInPath = userPath && a.locationPath && a.locationPath.startsWith(userPath);
+                const bInPath = userPath && b.locationPath && b.locationPath.startsWith(userPath);
+                if (aInPath && !bInPath) return -1;
+                if (!bInPath && aInPath) return 1;
+
+                if (this.state.userData) {
+                    if (a.player === this.state.userData.player) return -1;
+                    if (b.player === this.state.userData.player) return 1;
+                }
+
+                return a.player.localeCompare(b.player);
+            });
+
+            recruiters.forEach(recruiter => {
+                select.appendChild(new Option(recruiter.player, recruiter.player));
+            });
+        },
+        _populateRankSelector: function(ranks) {
+          const select = this.elements.rankSelect;
+          select.innerHTML = ''; 
+
+          const placeholder = new Option('[ Select Rank ]', '');
+          placeholder.classList.add('placeholder-option');
+          select.appendChild(placeholder);
+          select.classList.add('select-placeholder');
+
+          ranks.forEach(r => {
+            const displayText = (r.abbr && r.abbr.trim() !== '') ? r.abbr : r.name;
+            
+            const tir = this._getApplicableTir(r.name);
+            if (tir) {
+            }
+            const option = new Option(`${displayText}${tir ? ` (${tir}d)` : ''}`, r.name);
+
+            if (tir) {
+              option.style.backgroundColor = '#fffbe6';
+              option.title = 'This rank has promotion requirements and is not a standard recruitment rank.';
+            }
+            select.appendChild(option);
+          });
+          
+          select.value = ''; 
+        },
+        _populateSquadSelector: function(hierarchy) {
+            const list = this.elements.recruitSquadCustomList;
+            list.innerHTML = '';
+            this.elements.squadSelect.innerHTML = '<option value="">[ Select Section ]</option>';
+
+            const buildOptions = (nodes, parentUl, isTopLevel = false, currentPath = '') => {
+                nodes.forEach(node => {
+                    const newPath = currentPath ? `${currentPath}>${node.name}` : node.name;
+                    const hasChildren = node.children && node.children.length > 0;
+
+                    const li = document.createElement('li');
+                    const span = document.createElement('span');
+                    span.textContent = node.name;
+                    li.appendChild(span);
+
+                    li.dataset.value = newPath;
+                    li.id = 'squad-option-' + newPath.replace(/>/g, '-').toLowerCase();
+                    li.setAttribute('role', 'option');
+                    li.setAttribute('aria-selected', 'false');
+                    li.setAttribute('tabindex', '-1');
+
+                    parentUl.appendChild(li);
+
+                    this.elements.squadSelect.appendChild(new Option(node.name, newPath));
+
+                    if (hasChildren) {
+                        const subUl = document.createElement('ul');
+                        li.appendChild(subUl);
+                        buildOptions(node.children, subUl, false, newPath);
+                    }
+                });
+            };
+
+            if (hierarchy) {
+                buildOptions(hierarchy, list, true);
+            }
+        },
+        updateSquadAvailability: function() {
+          this.state.selectedRankTitle = null;
+          const selectedRank = this.elements.rankSelect.value;
+          if (!selectedRank) return;
+
+          const memo = {};
+
+          const getAvailabilityForPath = (path) => {
+              if (memo[path] !== undefined) return memo[path];
+
+              const availabilityForNode = this.state.availabilityMap[path];
+              if (!availabilityForNode) {
+                  memo[path] = 0;
+                  return 0;
+              }
+
+              const rankUpper = selectedRank.toUpperCase();
+              let total = 0;
+
+              if (typeof availabilityForNode[rankUpper] === 'number') {
+                  total += availabilityForNode[rankUpper];
+              }
+
+              const titledSlots = availabilityForNode._titledSlots?.[rankUpper];
+              if (titledSlots) {
+                  total += Object.values(titledSlots).reduce((sum, count) => sum + count, 0);
+              }
+
+              memo[path] = total;
+              return total;
+          };
+
+          const getDescendantAvailability = (node, path) => {
+              let total = getAvailabilityForPath(path);
+              if (node.children) {
+                  for (const child of node.children) {
+                      const childPath = `${path}>${child.name}`;
+                      total += getDescendantAvailability(child, childPath);
+                  }
+              }
+              return total;
+          };
+
+          const updateNodeDisplay = (node, currentPath = '') => {
+            const newPath = currentPath ? `${currentPath}>${node.name}` : node.name;
+
+            const totalSlotsForRank = this.getTotalSlotsForRank(newPath, selectedRank); 
+            const directAvailability = getAvailabilityForPath(newPath);
+            const totalDescendantAvailability = getDescendantAvailability(node, newPath);
+            const isSelectable = directAvailability > 0;
+
+            const li = this.elements.recruitSquadCustomList.querySelector(`li[data-value="${newPath}"]`);
+            if (li) {
+                const span = li.querySelector('span');
+                li.classList.toggle('unavailable-option', !isSelectable);
+                li.style.cursor = isSelectable ? 'pointer' : 'not-allowed';
+
+                const hasChildren = node.children && node.children.length > 0;
+                let displayText = node.name;
+
+                const displayCount = hasChildren ? totalDescendantAvailability : directAvailability;
+
+                if (displayCount > 0) {
+                    displayText += ` (${displayCount} open)`;
+                } else if (totalSlotsForRank > 0) {
+                    displayText += ` (Full)`;
+                }
+
+                span.textContent = displayText;
+            }
+
+            if (node.children) {
+              node.children.forEach(child => updateNodeDisplay(child, newPath));
+            }
+          };
+
+          this.state.structure.hierarchy.forEach(node => updateNodeDisplay(node));
+
+          this._setupCustomFieldsForRecruit();
+
+          const currentSelection = this.elements.squadSelect.value;
+          if (currentSelection) {
+            const currentLi = this.elements.recruitSquadCustomList.querySelector(`li[data-value="${currentSelection}"]`);
+            if (currentLi && currentLi.classList.contains('unavailable-option')) {
+              this.elements.squadSelect.value = "";
+              this.elements.recruitSquadCustomToggle.textContent = '[ Select Section ]';
+              this.elements.recruitSquadCustomToggle.classList.add('placeholder');
+            }
+
+          }
+          this.validateAndToggleButton();
+          const validOptions = Array.from(this.elements.recruitSquadCustomList.querySelectorAll('li[data-value]:not(.unavailable-option)'));
+          if (validOptions.length === 1) {
+            const onlyOptionValue = validOptions[0].dataset.value;
+            if (this.elements.squadSelect.value !== onlyOptionValue) {
+                this.selectSquad(onlyOptionValue);
+            }
+          }
+        },
+        _setupCustomFieldsForRecruit: function() {
+            if (!this.state.customFieldsUiEditable || this.state.customFieldsConfig.length === 0) {
+                return;
+            }
+            this.elements.customFieldsFieldset.classList.remove('hidden');
+            const container = this.elements.customFieldsContainer;
+            container.innerHTML = '';
+
+            this.state.customFieldsConfig.forEach(field => {
+                const formGroup = document.createElement('div');
+                formGroup.className = 'form-group';
+
+                const label = document.createElement('label');
+                label.htmlFor = `cf-${field.key}`;
+                let labelText = field.label;
+                if (field.required) {
+                    labelText += ' <span style="color: #c0392b;">*</span>';
+                }
+                label.innerHTML = labelText;
+
+                let input;
+                if (field.type === 'dropdown') {
+                    input = document.createElement('select');
+                    input.id = `cf-${field.key}`;
+                    (field.options || []).forEach(opt => {
+                        input.appendChild(new Option(opt, opt));
+                    });
+                } else {
+                    input = document.createElement('input');
+                    input.id = `cf-${field.key}`;
+
+                    input.placeholder = field.placeholder || '';
+                    input.value = field.defaultValue || '';
+
+                    if (field.type === 'integer') {
+                        this._applyMask(input, {
+                            mask: Number,
+                            min: field.validation?.min ?? -Infinity,
+                            max: field.validation?.max ?? Infinity,
+                            thousandsSeparator: ''
+                        });
+                    } else if (field.validation && field.validation.regex) {
+                        this._applyMask(input, {
+                            mask: new RegExp(field.validation.regex)
+                        });
+                    }
+
+                    input.dataset.key = field.key;
+                }
+
+                formGroup.appendChild(label);
+                formGroup.appendChild(input);
+                container.appendChild(formGroup);
+            });
+        },
+        updateTirWarning: function() {
+            const selectedRank = this.elements.rankSelect.value;
+            const tir = this._getApplicableTir(selectedRank);
+            const icon = this.elements.rankRecruitInfoIcon;
+            if (tir) {
+                icon.title = `This selection falls under a ${tir}-day time-in-rank requirement.`;
+                icon.classList.remove('hidden');
+            } else {
+                icon.classList.add('hidden');
+            }
+        },
+        _getApplicableTir: function(rankName) {
+            const rankIndex = this.state.rankHierarchy.findIndex(r => r.name === rankName);
+            if (rankIndex === -1) {
+                return null;
+            }
+
+            for (let i = rankIndex; i >= 0; i--) {
+                const currentRank = this.state.rankHierarchy[i];
+                const tirDays = this.state.timeInRankRequirements[currentRank.name];
+                if (tirDays !== undefined) {
+                    return tirDays;
+                }
+            }
+            return null;
+        },
+        _validateField: function(fieldId) {
+  const input = this.elements[fieldId + 'Input'] || this.elements[fieldId + 'Select'];
+  const value = input.value.trim();
+  let errorMessage = '';
+
+  switch (fieldId) {
+    case 'playerName':
+      const rules = this.state.validationRules ? this.state.validationRules.USERNAME : null;
+      if (!value) {
+          errorMessage = 'Username is required.';
+          break;
+      }
+      if (rules) {
+          if (rules.MIN_LENGTH && value.length < rules.MIN_LENGTH) errorMessage = rules.LENGTH_ERROR || `Must be at least ${rules.MIN_LENGTH} characters.`;
+          else if (rules.MAX_LENGTH && value.length > rules.MAX_LENGTH) errorMessage = rules.LENGTH_ERROR || `Must be no more than ${rules.MAX_LENGTH} characters.`;
+          else if (rules.REGEX && !new RegExp(rules.REGEX).test(value)) errorMessage = rules.REGEX_ERROR || 'Invalid characters used.';
+          else if (rules.NO_START_END_UNDERSCORE && (value.startsWith('_') || value.endsWith('_'))) errorMessage = rules.START_END_UNDERSCORE_ERROR || 'Cannot start or end with an underscore.';
+          else if (rules.MAX_UNDERSCORES !== undefined && (value.match(/_/g) || []).length > rules.MAX_UNDERSCORES) errorMessage = rules.MAX_UNDERSCORES_ERROR || `Only ${rules.MAX_UNDERSCORES} underscore(s) are allowed.`;
+      } else {
+          if (value.length < 3 || value.length > 20) errorMessage = 'Must be 3-20 characters.';
+          else if (!/^[a-zA-Z0-9_]+$/.test(value)) errorMessage = 'Invalid characters used.';
+          else if (value.startsWith('_') || value.endsWith('_')) errorMessage = 'Cannot start or end with an underscore.';
+          else if ((value.match(/_/g) || []).length > 1) errorMessage = 'Only one underscore is allowed.';
+      }
+
+      if (!errorMessage && this.state.allCompanymen.includes(value.toLowerCase())) {
+          errorMessage = 'This username is already taken.';
+      }
+      break;
+    case 'discordId':
+      const numericId = value.replace(/\D/g, '');
+      if (!numericId) errorMessage = 'Discord ID is required.';
+      else if (numericId.length < 17 || numericId.length > 19) errorMessage = 'Must be a 17-19 digit number.';
+      else if (this.state.allDiscordIds.includes(numericId)) errorMessage = 'This Discord ID is already in use.';
+      break;
+  }
+  this._showFieldError(fieldId, errorMessage);
+  return !errorMessage;
+},
+        _showFieldError: function(fieldId, message) {
+  const camelCaseFieldId = fieldId.replace(/-(\w)/g, (_, char) => char.toUpperCase());
+  const iconElement = this.elements[camelCaseFieldId + 'InfoIcon'];
+  
+  if (!iconElement) return;
+
+  if (message) {
+    iconElement.title = message;
+    iconElement.classList.remove('hidden');
+    iconElement.classList.remove('warning'); 
+  } else {
+    iconElement.classList.add('hidden');
+  }
+},
+        validateAndToggleButton: function() {
+          const isPlayerNameValid = this._validateField('playerName');
+          const isDiscordIdValid = this._validateField('discordId');
+          const areCustomFieldsValid = this._validateCustomFields();
+        
+          const checkSelect = (fieldId, msg) => {
+            let el;
+            if (fieldId === 'rank-recruit') {
+              el = this.elements.rankSelect;
+            } else if (fieldId === 'squad-recruit') {
+              el = this.elements.squadSelect;
+            } else {
+              el = this.elements[fieldId + 'Select'];
+            }
+
+            const isValid = el && el.value !== '';
+            this._showFieldError(fieldId, isValid ? '' : msg);
+            return isValid;
+          };
+        
+          const isRankSelected = checkSelect('rank-recruit', 'A rank must be selected.');
+          const isRegionSelected = checkSelect('region', 'A region must be selected.');
+          const isSquadSelected = checkSelect('squad-recruit', 'A section must be selected.');
+          const isRecruiterValid = checkSelect('recruiter', 'A recruiter must be selected.');
+          
+          this.elements.submitButton.disabled = !(
+              isPlayerNameValid &&
+              isDiscordIdValid &&
+              areCustomFieldsValid &&
+              isRankSelected &&
+              isRegionSelected &&
+              isSquadSelected &&
+              isRecruiterValid
+          );
+        },
+        submitRecruitForm: async function() {
+          this.validateAndToggleButton();
+          if (this.elements.submitButton.disabled) return;
+
+          this.elements.submitButton.disabled = true;
+          this.elements.submitButton.textContent = 'Processing...';
+          this.setFormInteractionEnabled(false);
+
+          try {
+            const selectedRank = this.elements.rankSelect.value;
+            const selectedSquad = this.elements.squadSelect.value;
+            let finalRankTitle = this.state.selectedRankTitle;
+
+            const availability = this.state.availabilityMap[selectedSquad];
+            const titledSlots = availability?._titledSlots?.[selectedRank.toUpperCase()];
+            if (titledSlots) {
+                const availableTitles = Object.keys(titledSlots).filter(title => titledSlots[title] > 0);
+                if (availableTitles.length > 1) {
+                   const choice = await this.promptForChoice(
+                       `Choose ${selectedRank} Role`,
+                       'Multiple roles are available for this rank and section. Please select one to continue:',
+                       availableTitles,
+                       null
+                   );
+                    if (!choice) {
+                        this._resetSubmitButton();
+                        this.setFormInteractionEnabled(true);
+                        return;
+                    }
+                    finalRankTitle = choice;
+                } else if (availableTitles.length === 1) {
+                    finalRankTitle = availableTitles[0];
+                }
+            }
+
+            let recruitEmail = null;
+            if (this.state.emailRequirement && this._checkEmailRequirement(selectedRank)) {
+                const providedEmail = await this.promptForEmail();
+                if (!providedEmail) {
+                    this._resetSubmitButton();
+                    this.setFormInteractionEnabled(true);
+                    return;
+                }
+                recruitEmail = providedEmail;
+            }
+
+            let grantAccess = false;
+            const accessConfig = this.state.sheetAccessConfig.ON_RECRUIT;
+            if (recruitEmail) {
+                if (accessConfig === 'ALWAYS') {
+                    grantAccess = true;
+                } else if (accessConfig === 'ASK') {
+                    const confirmed = await this.showConfirmation(
+                        `Do you want to grant spreadsheet editor access to ${recruitEmail}?`,
+                        "Yes, Grant Access",
+                        "No, Skip"
+                    );
+                    if (confirmed) {
+                        grantAccess = true;
+                    }
+                }
+            }
+
+            const customFields = {};
+            if (this.state.customFieldsUiEditable) {
+                this.elements.customFieldsContainer.querySelectorAll('input, select').forEach(input => {
+                    const key = input.dataset.key || input.id.replace('cf-', '');
+                    if (key) {
+                       customFields[key] = input.value;
+                    }
+                });
+            }
+
+            const details = {
+              playerName: this.elements.playerNameInput.value,
+              discordId: this.elements.discordIdInput.value,
+              rank: selectedRank,
+              region: this.elements.regionSelect.value,
+              squad: selectedSquad,
+              recruiter: this.elements.recruiterSelect.value,
+              note: this.elements.noteInput.value,
+              email: recruitEmail,
+              rankTitle: finalRankTitle,
+              customFields: customFields
+            };
+
+            this.state.pendingRecruitDetails = details;
+            this.state.pendingGrantAccess = grantAccess;
+
+            google.script.run
+              .withSuccessHandler(this.handleRecruitmentResult.bind(this))
+              .withFailureHandler(this.handleActionError.bind(this))
+              .Hebe_Initiat(details, false, grantAccess);
+
+          } catch (e) {
+            this.handleActionError(e);
+          }
+         },
+handleRecruitmentResult: async function(response) {
+    this.elements.spinner.style.display = 'none';
+
+    if (response.status === "SUCCESS") {
+        this.showConfirmation("Recruitment successful!", "OK", null).then(() => {
+            this.elements.playerNameInput.focus();
+        });
+
+        this.elements.playerNameInput.value = '';
+        this.elements.discordIdInput.value = '';
+        this.state.inputMasks.get('discord-id')?.updateValue();
+        this.elements.noteInput.value = '';
+
+        if (response.deltaPayload) {
+            this.applyDelta(response.deltaPayload);
+        }
+
+        this.updateSquadAvailability();
+        this._resetSubmitButton();
+        this.setFormInteractionEnabled(true);
+        this.state.pendingRecruitDetails = null;
+        this.state.pendingGrantAccess = null;
+
+        if (response.postActionVerificationToken) {
+            google.script.run.Iustitia_Confirmat_Actum(response.postActionVerificationToken);
+        }
+        if (response.webhookPayload) {
+                    }
+
+    } else if (response.status === "NEEDS_CONFIRMATION") {
+        const confirmed = await this.showConfirmation(response.message, "Yes, Proceed", "Cancel");
+
+        if (confirmed) {
+            const details = this.state.pendingRecruitDetails;
+            const grantAccess = this.state.pendingGrantAccess;
+
+            if (!details) {
+                this.handleInitialError({ message: "Session expired. Please try again." });
+                return;
+            }
+
+            this.elements.submitButton.disabled = true;
+            this.elements.submitButton.textContent = 'Processing...';
+
+            google.script.run
+                .withSuccessHandler(this.handleRecruitmentResult.bind(this))
+                .withFailureHandler(this.handleInitialError.bind(this))
+                .Hebe_Initiat(details, true, grantAccess);
+        } else {
+            this._resetSubmitButton();
+            this.setFormInteractionEnabled(true);
+        }
+    } else {
+        this._resetSubmitButton();
+        this.setFormInteractionEnabled(true);
+        this.showConfirmation(response.message || 'An unknown error occurred.', "OK", null);
+    }
+},
+
+      applyDelta: function(payload) {
+           console.log("Applying delta update to local recruit cache.");
+           if (payload.newlyCreated) {
+               payload.newlyCreated.forEach(person => {
+                   this.state.allCompanymen.push(person.player.toLowerCase());
+                   if (person.discordId) {
+                       this.state.allDiscordIds.push(person.discordId);
+                   }
+               });
+           }
+           if (payload.newAvailabilityMap) {
+               this.state.availabilityMap = payload.newAvailabilityMap;
+           }
+      },
+        _resetSubmitButton: function() {
+          this.elements.submitButton.textContent = 'Recruit';
+          this.validateAndToggleButton();
+        },
+        showConfirmation: function(message, confirmText = "OK", cancelText = "Cancel") {
+          return new Promise((resolve) => {
+            this.elements.confirmationMessage.innerText = message;
+            this.elements.confirmButton.innerText = confirmText;
+            this.elements.cancelButton.classList.toggle('hidden', !cancelText);
+            if (cancelText) this.elements.cancelButton.innerText = cancelText;
+
+            this.elements.confirmationContainer.style.display = 'flex';
+
+            this.state.confirmationCallback = (result) => {
+              this.elements.confirmationContainer.style.display = 'none';
+              resolve(result);
+              this.state.confirmationCallback = null;
+            };
+          });
+        },
+        handleInitialError: function(error) {
+          if (this.elements.spinner) this.elements.spinner.style.display = 'none';
+          this.showConfirmation("Error: Could not load data. " + error.message, "OK", null);
+          this.setFormInteractionEnabled(false);
+          this.elements.submitButton.textContent = 'Error';
+        },
+
+        handleActionError: function(error) {
+          this.setFormInteractionEnabled(true);
+          this._resetSubmitButton();
+          this.showConfirmation("Error: " + (error.message || "An unknown error occurred."), "OK", null);
+        },
+      };
+      window.addEventListener('load', () => App.init());
+    </script>
+  </body>
+</html>

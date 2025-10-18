@@ -1,0 +1,87 @@
+THEMIS - Google Sheets Administration Utility
+Custom License Agreement
+
+Copyright (c) 2025 wpenistone (https://github.com/wpenistone)
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+=============================================================
+
+1. DEFINITIONS
+-------------
+"License" shall mean the terms and conditions for use, reproduction, and distribution as defined by this document.
+
+"Licensor" shall mean the original copyright holder, wpenistone.
+
+"Derivative Work" shall mean any work, whether in source or object form, that is based on (or derived from) the Work and for which the editorial revisions, annotations, elaborations, or other modifications represent, as a whole, an original work of authorship.
+
+"Work" shall mean the THEMIS software and its associated documentation.
+
+2. LICENSE GRANT
+----------------
+Subject to the terms and conditions of this License, Licensor hereby grants you a worldwide, royalty-free, non-exclusive license to use, reproduce, and distribute the Work under the following conditions:
+
+3. CONDITIONS OF USE
+--------------------
+a) PUBLIC REPOSITORY REQUIREMENT:
+   - Any copies, forks, clones, or distributions of this Work must be made publicly available
+   - Private repositories containing this Work are strictly prohibited
+   - All derivative works must be hosted in public repositories
+
+b) CREATOR CREDIT AND NOTIFICATION:
+   - You must credit the original creator (wpenistone) in all copies and derivative works
+   - You must inform the original creator of any derivative works or significant modifications
+   - Original attribution must be clearly visible in README files and documentation
+
+c) NO PRIVATE OR COMMERCIAL USE:
+   - This Work cannot be used in private repositories without explicit permission
+   - Commercial products or services based on this Work require written permission from the Licensor
+   - Educational and non-profit organizational use is permitted under the terms above
+
+d) MODIFICATION AND DISTRIBUTION:
+    - You may modify the Work for personal or organizational use
+    - You may create and use custom configurations for your own organization
+    - Code modifications beyond configurations require public sharing if distributed
+    - Modified versions must clearly indicate they are derivatives
+    - All modifications must be shared publicly if distributed
+
+4. RESTRICTIONS
+---------------
+You may NOT:
+- Use this Work in private repositories or closed-source projects
+- Create commercial products without permission
+- Remove or obscure original creator credits
+- Distribute modified versions without making source code public
+
+5. DISCLAIMER OF WARRANTIES
+---------------------------
+This Work is provided "as is" without warranty of any kind, either expressed or implied, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose. The entire risk as to the quality and performance of the Work is with you.
+
+6. LIMITATION OF LIABILITY
+--------------------------
+In no event and under no legal theory, whether in tort (including negligence), contract, or otherwise, unless required by applicable law (such as deliberate and grossly negligent acts) or agreed to in writing, shall the Licensor be liable to you for damages, including any direct, indirect, special, incidental, or consequential damages of any character arising as a result of this License or out of the use or inability to use the Work (including but not limited to damages for loss of goodwill, work stoppage, computer failure or malfunction, or any and all other commercial damages or losses), even if Licensor has been advised of the possibility of such damages.
+
+7. ACCEPTANCE
+-------------
+By using, copying, or distributing this Work, you accept all the terms and conditions of this License.
+
+8. CONTACT INFORMATION
+----------------------
+For permissions, notifications, or questions regarding this license:
+- GitHub: https://github.com/wpenistone
+- Repository: https://github.com/wpenistone/THEMIS-DB-Sheets
+
+---
+
+THEMIS Configuration Studio (Visual Editor) - Additional License Terms
+======================================================================
+
+The THEMIS Configuration Studio, when developed, will be subject to the same terms as above with the following additional considerations:
+
+- Visual Layout Designer output must be publicly shareable
+- Organization Tree Editor configurations must include proper attribution
+- Live Error Checking features and algorithms must remain open source
+- Any standalone visual editor tools must be distributed under this same license
+
+---
+
+This license is designed to ensure transparency, proper attribution, and community benefit while protecting the original creator's rights and intentions.

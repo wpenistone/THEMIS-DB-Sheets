@@ -1,0 +1,3160 @@
+<!doctype html>
+<html>
+  <head>
+    <base target="_top" />
+    <link
+      rel="stylesheet"
+      href="https://ssl.gstatic.com/docs/script/css/add-ons1.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css"
+    />
+    <script src="https://unpkg.com/imask"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: "IBM Plex Sans", sans-serif;
+        box-sizing: border-box;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+      form {
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        padding: 0 16px 16px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        overflow-y: hidden;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+      label {
+        margin-bottom: 4px;
+        font-size: 0.9em;
+        color: #444;
+      }
+      select,
+      button {
+        text-align: center;
+        background-color: #fff;
+      }
+
+      select:focus, textarea:focus, button:focus {
+
+          outline-offset: 2px;
+          border-color: #4285f4;
+          box-shadow: 0 0 3px rgba(66, 133, 244, 0.5)
+      }
+      input::placeholder {
+        color: #999;
+        font-style: italic;
+      }
+      select {
+        max-width: 100%;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
+      }
+      .placeholder-option {
+        color: #999;
+        font-style: italic;
+        font-weight: normal;
+      }
+
+      select option:not(.placeholder-option) {
+        color: initial;
+        font-style: normal;
+        font-weight: normal;
+      }
+
+      fieldset {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 0;
+        margin: 0;
+      }
+      .fieldset-content {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .button-group {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;  
+        width: 100%;
+        margin-top: 30px;
+      }
+
+      .main-actions {
+        display: flex;
+        gap: 10px;
+
+      }
+      #loa-button {
+          margin-left: 0; 
+      }
+      #delete-button {
+          margin-left: 0; 
+      }
+
+      #choice-buttons-container.button-group > button {
+        margin-left: 0;
+      }
+      .info-icon {
+         color: #f39c12; 
+         font-weight: bold;
+         cursor: help;
+         font-family: sans-serif;
+         margin-left: 8px;
+         display: none; 
+        }
+        info-icon.error {
+         color: #c0392b; 
+        }
+      .button-group button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px; 
+        font-weight: 500;
+        min-width: 80px;
+        border-radius: 4px;
+        box-sizing: border-box; 
+      }
+
+      #spinner-container,
+      .confirmation-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.85);
+        z-index: 100;
+      }
+      .confirmation-dialog {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      .confirmation-dialog p {
+        margin-bottom: 20px;
+      }
+
+      .confirmation-dialog .button-group {
+        margin-top: 15px;
+      }
+      #new-location-custom-toggle.disabled,
+      #custom-select-toggle.disabled {
+        background-color: #ffffff !important;
+        color: #ffffff !important; 
+        cursor: not-allowed;
+        border-color: #dcdcdc;
+      }
+      #new-location-custom-toggle:not(.disabled) {
+        color: #222; 
+      }
+
+      #new-location-custom-toggle.disabled.placeholder,
+      #custom-select-toggle.disabled.placeholder {
+          color: #ffffff !important;
+      }
+      #new-location-custom-toggle.disabled.placeholder,
+      #custom-select-toggle.disabled.placeholder {
+          color: #ffffff !important;
+      }
+
+      #new-location-custom-toggle.disabled::after,
+      #custom-select-toggle.disabled::after {
+        border-top-color: #dcdcdc;
+      }
+      .chip-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        border: 1px solid #ccc;
+        padding: 5px;
+        border-radius: 4px;
+        align-items: center;
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 38px;
+      }
+      .attendee-chip {
+        display: inline-flex;
+        align-items: center;
+        background-color: #e0e0e0;
+        padding: 5px 10px;
+        border-radius: 15px;
+        margin: 2px;
+      }
+      .attendee-chip .remove-btn {
+        margin-left: 10px;
+        cursor: pointer;
+      }
+      .autocomplete-container {
+        position: relative;
+        flex-grow: 1;
+      }
+      #person-search-input {
+        border: none;
+        outline: none;
+        width: 100%;
+        background: transparent;
+        padding: 2px;
+      }
+      #person-autocomplete-suggestions {
+        position: absolute;
+        border: 1px solid #ccc;
+        background-color: white;
+        width: 100%;
+        max-height: 150px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      #person-autocomplete-suggestions div {
+        padding: 8px;
+        cursor: pointer;
+      }
+      #person-autocomplete-suggestions div:hover,
+      #person-autocomplete-suggestions .selected {
+        background-color: #f0f0f0;
+      }
+      #person-autocomplete-suggestions.hidden {
+        border: none;
+      }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.unavailable-option {
+        color: #999 !important;
+        font-style: italic;
+      }
+
+      #custom-select-container {
+        position: relative;
+        width: 100%;
+        font-family: "IBM Plex Sans", sans-serif;
+      }
+
+      #custom-select-toggle {
+        font-family: inherit;
+        color: #222;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px 25px 8px 8px;
+        cursor: pointer;
+        text-align: center;
+        position: relative;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #custom-select-toggle:hover {
+        border-color: #b9b9b9;
+      }
+
+      #custom-select-toggle:focus {
+        outline: none;
+        outline-offset: 2px;
+        border-color: #4285f4;
+        box-shadow: 0 0 3px rgba(66, 133, 244, 0.5);
+      }
+
+      #custom-select-toggle::after {
+        content: '';
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 5px solid #555;
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      #custom-select-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-top: none;
+        border-radius: 0 0 2px 2px;
+        z-index: 1001;
+        max-height: 250px;
+        overflow-y: auto;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      }
+
+      #custom-select-list,
+      #custom-select-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        position: relative;
+      }
+
+      #custom-select-list ul {
+        padding-left: 20px;
+        background-color: #fff;
+      }
+
+      #custom-select-list li {
+        padding: 8px 12px 8px 30px;
+        cursor: pointer;
+        position: relative;
+        white-space: nowrap;
+      }
+
+      #custom-select-list li:hover > span,
+      #custom-select-list li.focused > span {
+        background-color: #f1f1f1;
+      }
+
+      #custom-select-list li > span {
+        position: relative;
+        z-index: 1;
+        display: inline-block;
+        padding: 2px 4px;
+        border-radius: 2px;
+        color: #222;
+      }
+
+      #custom-select-list > li.top-level-item {
+        font-weight: 500;
+        padding-left: 12px;
+      }
+
+      #custom-select-list li:not(.top-level-item)::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 10px;
+        width: 1px;
+        height: 100%;
+        background-color: #dcdcdc;
+        z-index: 0;
+      }
+
+      #custom-select-list li:not(.top-level-item)::after {
+        content: '';
+        position: absolute;
+        top: 18px;
+        left: 11px;
+        width: 19px;
+        height: 1px;
+        background-color: #dcdcdc;
+        z-index: 0;
+      }
+
+      #custom-select-list li:last-child::before {
+        height: 18px;
+      }
+
+      #custom-select-list > li.top-level-item::before,
+      #custom-select-list > li.top-level-item::after {
+        display: none;
+      }
+
+      #new-location-custom-container {
+        position: relative;
+      }
+      #new-location-custom-toggle {
+        font-family: inherit;
+        color: #222;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px 25px 8px 8px;
+        cursor: pointer;
+        text-align: center;
+        position: relative;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #new-location-custom-toggle:not(.has-selection) {
+        color: #666;
+        font-style: italic;
+      }
+
+      #new-location-custom-toggle::after {
+        content: '';
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid #555;
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      #new-location-custom-toggle:focus {
+        outline: none;
+        outline-offset: 2px;
+        border-color: #4285f4;
+        box-shadow: 0 0 3px rgba(66, 133, 244, 0.5);
+      }
+      #new-location-custom-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-top: none;
+        z-index: 1001;
+        max-height: 250px;
+        overflow-y: auto;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+
+      #new-location-custom-list,
+      #new-location-custom-list ul {
+        list-style: none; padding: 0; margin: 0; position: relative;
+      }
+      #new-location-custom-list ul {
+        padding-left: 20px; background-color: #fff;
+      }
+      #new-location-custom-list li {
+        padding: 8px 12px 8px 30px; cursor: pointer; position: relative; white-space: nowrap;
+      }
+      #new-location-custom-list li:hover > span {
+        background-color: #f1f1f1;
+      }
+      #new-location-custom-list li > span {
+        position: relative; z-index: 1; display: inline-block; padding: 2px 4px; border-radius: 2px;
+        color: #222;
+      }
+      #new-location-custom-list > li.top-level-item {
+        font-weight: 500; padding-left: 12px;
+      }
+
+      #new-location-custom-list li:not(.top-level-item)::before,
+      #new-location-custom-list li:not(.top-level-item)::after {
+        content: ''; position: absolute; background-color: #dcdcdc; z-index: 0;
+      }
+      #new-location-custom-list li:not(.top-level-item)::before {
+        top: 0; left: 10px; width: 1px; height: 100%;
+      }
+      #new-location-custom-list li:not(.top-level-item)::after {
+        top: 18px; left: 11px; width: 19px; height: 1px;
+      }
+      #new-location-custom-list li:last-child::before {
+        height: 18px;
+      }
+      #new-location-custom-list > li.top-level-item::before,
+      #new-location-custom-list > li.top-level-item::after {
+        display: none;
+      }
+
+      #new-location-custom-list li.unavailable-option > span {
+        color: #999;
+        font-style: italic;
+      }
+
+      #custom-select-list li[aria-expanded="false"] > ul,
+      #new-location-custom-list li[aria-expanded="false"] > ul {
+        display: none;
+      }
+      .custom-select-list li.has-children > span::before {
+        content: '▸'; position: absolute; left: -15px; transition: transform 0.2s;
+      }
+      .custom-select-list li.has-children[aria-expanded="true"] > span::before {
+        transform: rotate(90deg);
+      }
+      #new-location-custom-toggle.placeholder,
+      #custom-select-toggle.placeholder,
+      select.select-placeholder {
+          color: #999;
+          font-style: italic;
+      }
+      .row-highlight {
+        background-color: #fffbe6 !important; 
+        transition: background-color 1s ease-out;
+      }
+    </style>
+  </head>
+  <body
+    role="dialog"
+    aria-labelledby="management-dialog-title"
+    aria-describedby="management-dialog-description"
+  >
+    <div id="spinner-container" style="display: flex">
+      <div>Initializing THEMIS...</div>
+    </div>
+
+    <div
+      id="generic-confirmation-container"
+      class="confirmation-container"
+      style="z-index: 101"
+      role="dialog"
+      aria-labelledby="generic-confirmation-title"
+      aria-modal="true"
+    >
+      <div class="confirmation-dialog">
+        <h3 id="generic-confirmation-title" class="sr-only">Confirmation</h3>
+        <p id="generic-confirmation-message"></p>
+        <div class="button-group">
+          <button class="action" id="generic-confirm-button">OK</button>
+          <button id="generic-cancel-button">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div
+      id="loa-dialog-container"
+      class="confirmation-container"
+      role="dialog"
+      aria-labelledby="loa-dialog-title"
+      aria-modal="true"
+    >
+      <div class="confirmation-dialog">
+        <h3 id="loa-dialog-title">Set Leave of Absence</h3>
+        <form id="loa-form" novalidate>
+          <div class="form-group" style="text-align: left">
+            <label for="loa-date-range">Leave Dates (Start - End)</label>
+            <input
+              type="text"
+              id="loa-date-range"
+              autocomplete="off"
+              style="
+                width: 100%;
+                text-align: center;
+                padding: 8px;
+                box-sizing: border-box;
+              "
+              aria-describedby="loa-date-help"
+            />
+          </div>
+          <div class="form-group">
+            <label for="loa-reason">Reason</label>
+            <textarea
+              id="loa-reason"
+              rows="3"
+              style="width: 100%"
+              aria-describedby="loa-reason-help"
+              autocomplete="off"
+            ></textarea>
+          </div>
+          <div class="button-group">
+            <button
+              type="submit"
+              class="action"
+              id="loa-confirm-button"
+              disabled
+            >
+              Confirm
+            </button>
+            <button type="button" id="loa-cancel-button">Cancel</button>
+            <button type="button" id="loa-end-now-button">
+              End LOA Now
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div
+      id="choice-prompt-container"
+      class="confirmation-container"
+      style="z-index: 102"
+      role="dialog"
+      aria-labelledby="choice-prompt-title"
+      aria-modal="true"
+    >
+      <div class="confirmation-dialog">
+        <h3 id="choice-prompt-title">Choose a Role</h3>
+        <p id="choice-prompt-message"></p>
+        <div id="choice-buttons-container" class="button-group" style="flex-direction: column; margin-top: 15px; align-items: stretch;">
+
+        </div>
+        <div class="button-group" style="margin-top: 20px;">
+           <button type="button" id="choice-cancel-button">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div
+      id="custom-fields-container"
+      class="confirmation-container"
+      role="dialog"
+      aria-labelledby="custom-fields-title"
+      aria-modal="true"
+    >
+      <div class="confirmation-dialog">
+        <h3 id="custom-fields-title">Edit Custom Fields</h3>
+        <form id="custom-fields-form" novalidate>
+        </form>
+        <div class="button-group">
+          <button type="submit" form="custom-fields-form" class="action" id="cf-confirm-button">
+            Save
+          </button>
+          <button type="button" id="cf-cancel-button">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div
+      id="email-prompt-container"
+      class="confirmation-container"
+      style="z-index: 102"
+      role="dialog"
+      aria-labelledby="email-prompt-title"
+      aria-modal="true"
+>
+      <div class="confirmation-dialog">
+        <h3 id="email-prompt-title">Email Required</h3>
+        <p id="email-prompt-message"></p>
+        <form id="email-form" novalidate>
+          <div class="form-group" style="text-align: left; margin-top: 15px">
+            <label for="email-input-field">Email Address</label>
+            <input
+              type="email"
+              id="email-input-field"
+              style="width: 100%; padding: 8px; box-sizing: border-box"
+              required
+            />
+          </div>
+          <div
+            id="email-error-box"
+            style="
+              color: #721c24;
+              background-color: #f8d7da;
+              border: 1px solid #f5c6cb;
+              padding: 10px;
+              border-radius: 4px;
+              margin-top: 10px;
+              display: none;
+              text-align: left;
+            "
+            role="alert"
+          ></div>
+          <div class="button-group">
+            <button type="submit" class="action" id="email-confirm-button">
+              Save
+            </button>
+            <button type="button" id="email-cancel-button">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <main class="container" id="main-container" style="display: none">
+      <h1 id="management-dialog-title" class="sr-only">
+        THEMIS: Company Management
+      </h1>
+      <div id="dropdown-announcements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+      <form id="management-form" novalidate>
+        <fieldset>
+          <legend>Selection</legend>
+          <div class="fieldset-content">
+            <div class="form-group" id="section-selector-group">
+              <label
+                for="section-selector"
+                id="section-label"
+                style="display: flex; align-items: center"
+              >
+                <span id="section-label-text">Browse by Section</span>
+                <button
+                  type="button"
+                  id="search-toggle-button"
+                  style="
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 1.2em;
+                    padding: 0;
+                    vertical-align: middle;
+                    margin-left: 8px;
+                  "
+                  aria-label="Toggle search mode"
+                >
+                  &#x1F50E;&#xFE0E;
+                </button>
+              </label>
+              <div
+                class="input-container"
+                style="position: relative; min-height: 38px"
+              >
+                <select id="section-selector" style="display: none;"></select>
+
+                <div id="custom-select-container">
+                  <button type="button" id="custom-select-toggle" aria-haspopup="listbox" aria-expanded="false" aria-label="Select section" aria-describedby="custom-select-help" aria-activedescendant="">
+                    [Select Section]
+                  </button>
+                  <div id="custom-select-options" role="listbox" style="display: none;" aria-label="Section options" aria-live="polite">
+                    <ul id="custom-select-list" role="presentation"></ul>
+                  </div>
+                </div>
+                <div
+                  id="person-search-container"
+                  style="
+                    display: none;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                  "
+                >
+                  <div
+                    id="selected-person-chip-container"
+                    class="chip-container"
+                  >
+                    <div class="autocomplete-container">
+                      <input
+                        type="text"
+                        id="person-search-input"
+                        autocomplete="off"
+                      />
+                      <div
+                        id="person-autocomplete-suggestions"
+                        class="hidden"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" id="person-selector-group">
+              <label for="person-selector" id="person-selector-label"
+                >Select Member</label
+              >
+              <select id="person-selector">
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Changes</legend>
+          <div class="fieldset-content">
+            <div class="form-group">
+              <label for="rank-selector">New Rank <span id="rank-selector-info-icon" class="info-icon">ⓘ</span></label>
+              <select id="rank-selector" disabled></select>
+            </div>
+
+            <div class="form-group">
+              <label for="location-selector">New Section</label>
+
+              <select id="location-selector" style="display: none;" disabled></select>
+
+              <div id="new-location-custom-container">
+                <button type="button" id="new-location-custom-toggle" aria-haspopup="listbox" aria-expanded="false" aria-label="Select new section" aria-describedby="new-location-help" aria-activedescendant="" disabled>
+                </button>
+                <div id="new-location-custom-options" role="listbox" style="display: none;" aria-label="Location options" aria-live="polite">
+                  <ul id="new-location-custom-list" role="presentation"></ul>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </fieldset>
+
+        <div class="button-group">
+          <div class="main-actions">
+            <button type="submit" class="action" id="submit-button" disabled>
+              Execute Change
+            </button>
+            <button type="button" id="loa-button" disabled>Manage LOA </button>
+            <button type="button" id="custom-fields-button" class="hidden" disabled>Custom Fields</button>
+          </div>
+          <button type="button" id="delete-button" disabled>Delete</button>
+        </div>
+      </form>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
+    <script>
+      function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+      }
+
+      function levenshtein(a, b) {
+        if (a.length === 0) return b.length;
+        if (b.length === 0) return a.length;
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
+        for (let j = 0; j <= a.length; j++) { matrix[0][j] = j; }
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+      }
+      const App = {
+        state: {
+           userData: undefined,
+           companyCache: [],
+           structureData: {},
+           availabilityMap: {},
+           rankHierarchy: [],
+           allLocations: [],
+           timeInRankRequirements: {},
+           isSearchMode: false,
+           selectedPerson: null,
+           selectedPersonIdentifier: null,
+           playerForEmail: null,
+           debouncedSearch: null,
+           ubtSettings: {},
+           emailRequirement: {},
+           inputMasks: new Map(),
+           validationRules: {},
+           searchString: '',
+           searchTimeout: null,
+           originalLoaData: null,
+           lastInteractedIdentifier: null,
+           selectedRankTitle: null,
+           isProcessingAction: false,
+           choiceResolver: null,
+           sheetAccessConfig: {}, 
+
+        },
+
+        _checkEmailRequirement: function(selectedRank) {
+            const conditionConfig = this.state.emailRequirement;
+            const rankHierarchy = this.state.rankHierarchy;
+
+            if (!conditionConfig || !conditionConfig.CONDITION) return false;
+
+            const condition = conditionConfig.CONDITION.trim();
+            const selectedRankIndex = rankHierarchy.findIndex(r => r.name === selectedRank);
+            if (selectedRankIndex === -1) return false;
+
+            if (condition.includes(',')) {
+                const requiredRanks = condition.split(',').map(r => r.trim().toUpperCase());
+                const selectedRankInfo = rankHierarchy[selectedRankIndex];
+                const selectedRankNames = [selectedRankInfo.name.toUpperCase()];
+                if (selectedRankInfo.abbr) selectedRankNames.push(selectedRankInfo.abbr.toUpperCase());
+                return requiredRanks.some(reqRank => selectedRankNames.includes(reqRank));
+            }
+
+            const match = condition.match(/^(>=|<=|>|<|=)?\s*(.*)$/);
+            if (!match) return false;
+
+            const operator = match[1] || '>=';
+            const rankName = match[2];
+
+            const compareRankIndex = rankHierarchy.findIndex(r => r.name.toUpperCase() === rankName.toUpperCase() || (r.abbr && r.abbr.toUpperCase() === rankName.toUpperCase()));
+            if (compareRankIndex === -1) return false;
+
+            switch (operator) {
+                case '>=': return selectedRankIndex >= compareRankIndex;
+                case '>':  return selectedRankIndex > compareRankIndex;
+                case '<=': return selectedRankIndex <= compareRankIndex;
+                case '<':  return selectedRankIndex < compareRankIndex;
+                case '=':  return selectedRankIndex === compareRankIndex;
+                default:   return false;
+            }
+        },
+        _getApplicableTir: function(rankName) {
+            const rankIndex = this.state.rankHierarchy.findIndex(r => r.name === rankName);
+            if (rankIndex === -1) {
+                return null;
+            }
+
+            for (let i = rankIndex; i >= 0; i--) {
+                const currentRank = this.state.rankHierarchy[i];
+                const tirDays = this.state.timeInRankRequirements[currentRank.name.toUpperCase()];
+                if (tirDays !== undefined) {
+                    return { rank: currentRank.name, days: tirDays };
+                }
+            }
+            return null;
+        },
+
+        _parseDate: function(dateString) {
+          if (!dateString) return null;
+          const date = new Date(dateString + 'T00:00:00');
+          return isNaN(date.getTime()) ? null : date;
+        },
+        promptForEmail: function() {
+          return new Promise((resolve) => {
+            this._setFormInteractionEnabled(false);
+            const prompt = this.state.emailRequirement.PROMPT || "An email is required for this promotion. Please provide one.";
+            this.elements.emailPromptMessage.textContent = prompt;
+            this.elements.emailInputField.value = '';
+            this.elements.emailErrorBox.style.display = 'none';
+            this.elements.emailPromptContainer.style.display = 'flex';
+            this.elements.emailInputField.focus();
+
+            const submitHandler = (e) => {
+              e.preventDefault();
+              const email = this.elements.emailInputField.value.trim();
+              if (!email) {
+                this.showEmailError("Email address is required.");
+                return;
+              }
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              if (!emailRegex.test(email)) {
+                this.showEmailError("Please enter a valid email address.");
+                return;
+              }
+              cleanup();
+              resolve(email);
+            };
+
+            const cancelHandler = () => {
+              cleanup();
+              resolve(null);
+            };
+
+            const cleanup = () => {
+              this.elements.emailForm.removeEventListener('submit', submitHandler);
+              this.elements.emailCancelButton.removeEventListener('click', cancelHandler);
+              this.elements.emailPromptContainer.style.display = 'none';
+              this._setFormInteractionEnabled(true);
+            };
+
+            this.elements.emailForm.addEventListener('submit', submitHandler);
+            this.elements.emailCancelButton.addEventListener('click', cancelHandler);
+          });
+        },
+
+        promptForChoice: function(title, message, choices, context = {}) {
+            return new Promise((resolve) => {
+                this.state.choiceResolver = resolve;
+                this.elements.choicePromptTitle.textContent = title;
+                this.elements.choicePromptMessage.textContent = message;
+
+                const buttonContainer = this.elements.choiceButtonsContainer;
+                buttonContainer.innerHTML = '';
+
+                choices.forEach(choice => {
+                    const button = document.createElement('button');
+                    button.textContent = choice;
+                    button.className = 'action';
+                    button.style.marginBottom = '5px';
+                    button.style.width = '100%';
+
+                    const isSameLocation = context.destinationLocation === context.currentLocation;
+                    const isSameRole = choice === context.currentRole;
+
+                    if (isSameLocation && isSameRole) {
+                        button.disabled = true;
+                        button.textContent += ' (Current)';
+                    }
+
+                    button.onclick = () => {
+                        this.elements.choicePromptContainer.style.display = 'none';
+                        if (this.state.choiceResolver) {
+                            this.state.choiceResolver(choice);
+                            this.state.choiceResolver = null;
+                        }
+                    };
+                    buttonContainer.appendChild(button);
+                });
+
+                this.elements.choicePromptContainer.style.display = 'flex';
+            });
+        },
+
+        elements: {},
+        _applyMask: function(element, maskOptions) {
+            if (!element) return;
+            if (this.state.inputMasks.has(element.id)) {
+                this.state.inputMasks.get(element.id).destroy();
+            }
+            const mask = IMask(element, maskOptions);
+            this.state.inputMasks.set(element.id, mask);
+        },
+        loaPicker: null,
+
+        _ensureElementIsVisible: function(container, element) {
+          setTimeout(() => {
+            if (!element) return;
+            const containerRect = container.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+
+            if (elementRect.bottom > containerRect.bottom) {
+              const scrollAmount = elementRect.bottom - containerRect.bottom;
+
+              container.scrollBy({
+                top: scrollAmount + 5,
+                behavior: 'smooth'
+              });
+            }
+          }, 0);
+        },
+
+        _scrollToLastInteractedRow: function() {
+            if (!this.state.lastInteractedIdentifier) return;
+
+            const rowElement = document.querySelector(`tr[data-source-identifier="${this.state.lastInteractedIdentifier}"]`);
+            if (rowElement) {
+                rowElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+
+                rowElement.classList.add('row-highlight');
+                setTimeout(() => {
+                    rowElement.classList.remove('row-highlight');
+                }, 2000);
+            }
+            this.state.lastInteractedIdentifier = null; 
+        },
+
+          init: function() {
+             this._cacheDOMElements();
+             this._initializeLoaPicker();
+
+             google.script.run
+               .withSuccessHandler(this._onDataLoaded.bind(this)) 
+               .withFailureHandler(this.onFailure.bind(this))
+               .Apollo_Illuminat_Concilium(); 
+          },
+
+        applyDelta: function(payload) {
+
+            if (payload.deletedIdentifier) {
+                this.state.companyCache = this.state.companyCache.filter(
+                    p => p.sourceIdentifier !== payload.deletedIdentifier
+                );
+            }
+
+            if (payload.updatedPersons) {
+                payload.updatedPersons.forEach(updatedPerson => {
+                    const index = this.state.companyCache.findIndex(
+
+                        p => p.player === updatedPerson.player
+                    );
+                    if (index > -1) {
+                        this.state.companyCache[index] = updatedPerson;
+                    } else {
+
+                        this.state.companyCache.push(updatedPerson);
+                    }
+                });
+            }
+
+            if (payload.newlyCreated) { 
+                this.state.companyCache.push(...payload.newlyCreated);
+            }
+
+            if (payload.newAvailabilityMap) {
+                this.state.availabilityMap = payload.newAvailabilityMap;
+            }
+        },
+        _updateManagementTirWarning: function() {
+          const icon = this.elements.rankSelectorInfoIcon;
+          if (!this.state.selectedPerson) {
+            icon.style.display = 'none';
+            return;
+          }
+        
+          const joinDate = this._parseDate(this.state.selectedPerson.joinDate);
+
+          if (!joinDate) {
+            icon.style.display = 'none';
+            return;
+          }
+        
+          const selectedRank = this.elements.rankSelector.value;
+          const tirRequirement = this._getApplicableTir(selectedRank);
+          if (!tirRequirement) {
+            icon.style.display = 'none';
+            return;
+          }
+        
+          const { rank: requiredRank, days: requiredDays } = tirRequirement;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+        
+          const daysInService = Math.floor((today - joinDate) / (1000 * 60 * 60 * 24));
+        
+          if (daysInService < requiredDays) {
+            icon.title = `WARNING: Member has ${daysInService} days in service. ${requiredDays} are required for the rank of ${requiredRank}.`;
+            icon.classList.add('error'); 
+            icon.style.display = 'inline';
+          } else {
+            icon.style.display = 'none';
+          }
+        },
+
+        _initializeLoaPicker: function() {
+          const loaDateRangeInput = document.getElementById('loa-date-range');
+          this.loaPicker = new Litepicker({
+            element: loaDateRangeInput,
+            parentEl: document.body,
+            zIndex: 1000,
+            numberOfMonths: 1,
+            numberOfColumns: 1,
+            singleMode: false,
+            format: 'YYYY-MM-DD',
+            tooltipText: {
+              one: 'day',
+              other: 'days'
+            },
+            minDate: new Date(),
+            minDays: 3,
+            setup: (picker) => {
+              picker.on('selected', () => {
+                this.elements.loaConfirmButton.disabled = !this.elements.loaReason.value.trim();
+              });
+              picker.on('show', () => {
+                const pickerEl = picker.ui;
+                const inputRect = loaDateRangeInput.getBoundingClientRect();
+                pickerEl.style.left = `${(window.innerWidth / 2) - (pickerEl.offsetWidth / 2)}px`;
+                pickerEl.style.top = `${inputRect.bottom}px`;
+              });
+            }
+          });
+        },
+        _cacheDOMElements: function() {
+           const get = (id) => document.getElementById(id);
+           this.elements = {
+             spinner: get('spinner-container'),
+             spinnerMessage: get('spinner-container').querySelector('div'),
+             mainContainer: get('main-container'),
+             sectionSelector: get('section-selector'),
+             personSelector: get('person-selector'),
+             rankSelector: get('rank-selector'),
+             rankSelectorInfoIcon: get('rank-selector-info-icon'), 
+             locationSelector: get('location-selector'),
+             submitButton: get('submit-button'),
+             deleteButton: get('delete-button'),
+             loaButton: get('loa-button'),
+             searchToggleButton: get('search-toggle-button'),
+             personSearchContainer: get('person-search-container'),
+             selectedPersonChipContainer: get('selected-person-chip-container'),
+             personSearchInput: get('person-search-input'),
+             personAutocompleteSuggestions: get('person-autocomplete-suggestions'),
+             sectionLabelText: get('section-label-text'),
+             personSelectorGroup: get('person-selector-group'),
+             genericConfirmationContainer: get('generic-confirmation-container'),
+             genericConfirmButton: get('generic-confirm-button'),
+             genericCancelButton: get('generic-cancel-button'),
+             genericConfirmationMessage: get('generic-confirmation-message'),
+             loaDialogContainer: get('loa-dialog-container'),
+             loaDialogTitle: get('loa-dialog-title'),
+             loaReason: get('loa-reason'),
+             rankInfoIcon: get('rank-info-icon'), 
+             loaConfirmButton: get('loa-confirm-button'),
+             loaCancelButton: get('loa-cancel-button'),
+             loaEndNowButton: get('loa-end-now-button'),
+             choicePromptContainer: get('choice-prompt-container'),
+             choicePromptTitle: get('choice-prompt-title'),
+             choicePromptMessage: get('choice-prompt-message'),
+             choiceButtonsContainer: get('choice-buttons-container'),
+             choiceCancelButton: get('choice-cancel-button'),
+             emailPromptContainer: get('email-prompt-container'),
+             emailPromptMessage: get('email-prompt-message'),
+             emailInputField: get('email-input-field'),
+             emailConfirmButton: get('email-confirm-button'),
+             emailCancelButton: get('email-cancel-button'),
+             emailErrorBox: get('email-error-box'),
+             Form: get('management-form'),
+             loaForm: get('loa-form'),
+             emailForm: get('email-form'),
+             customFieldsButton: get('custom-fields-button'),
+             customFieldsContainer: get('custom-fields-container'),
+             customFieldsForm: get('custom-fields-form'),
+             cfConfirmButton: get('cf-confirm-button'),
+             cfCancelButton: get('cf-cancel-button'),
+
+             customSelectToggle: get('custom-select-toggle'),
+             customSelectOptions: get('custom-select-options'),
+             customSelectList: get('custom-select-list'),
+             customSelectContainer: get('custom-select-container'),
+
+             newLocationCustomContainer: get('new-location-custom-container'),
+             newLocationCustomToggle: get('new-location-custom-toggle'),
+             newLocationCustomOptions: get('new-location-custom-options'),
+             newLocationCustomList: get('new-location-custom-list'),
+           };
+         },
+
+setUiLock: function(isLocked, message = 'Processing...') {
+   this.state.isProcessingAction = isLocked;
+
+   if (isLocked) {
+       this.elements.spinnerMessage.textContent = message;
+       this.elements.spinner.style.display = 'flex';
+       this.elements.mainContainer.style.pointerEvents = 'none';
+       this.elements.mainContainer.style.opacity = '0.7';
+   } else {
+       this.elements.spinner.style.display = 'none';
+       this.elements.mainContainer.style.pointerEvents = 'auto';
+       this.elements.mainContainer.style.opacity = '1';
+   }
+
+   this._setFormInteractionEnabled(!isLocked);
+},
+         _setFormInteractionEnabled: function(enabled) {
+
+           const isProcessing = this.elements.spinner.style.display === 'flex';
+
+           this.elements.customSelectToggle.disabled = isProcessing || !enabled;
+           this.elements.personSearchInput.disabled = isProcessing || !enabled;
+           this.elements.searchToggleButton.disabled = isProcessing || !enabled;
+
+           if (!enabled || isProcessing) {
+             this.elements.personSelector.disabled = true;
+           } else {
+             const isBrowseMode = !this.state.isSearchMode;
+             const sectionSelected = !!this.elements.sectionSelector.value;
+             this.elements.personSelector.disabled = !(isBrowseMode && sectionSelected);
+           }
+
+           this.elements.customSelectToggle.classList.toggle('disabled', isProcessing || !enabled);
+
+           const personSelected = !!this.state.selectedPerson;
+
+           this.elements.rankSelector.disabled = isProcessing || !personSelected;
+           this.elements.locationSelector.disabled = isProcessing || !personSelected;
+           this.elements.newLocationCustomToggle.disabled = isProcessing || !personSelected;
+           this.elements.newLocationCustomToggle.classList.toggle('disabled', isProcessing || !personSelected);
+
+           this.elements.deleteButton.disabled = isProcessing || !personSelected;
+           this.elements.loaButton.disabled = isProcessing || !personSelected;
+
+           if (isProcessing || !personSelected) {
+               this.elements.submitButton.disabled = true;
+           } else {
+               this._checkCanSubmit();
+           }
+         },
+
+         _sortHierarchyForUserDisplay: function(nodes, userPath, currentFullPath = '') {
+            if (!nodes || nodes.length === 0) {
+                return;
+            }
+
+            nodes.sort((a, b) => {
+                const aFullPath = currentFullPath ? `${currentFullPath}>${a.name}` : a.name;
+                const bFullPath = currentFullPath ? `${currentFullPath}>${b.name}` : b.name;
+
+                const aIsInUserPath = userPath.startsWith(aFullPath);
+                const bIsInUserPath = userPath.startsWith(bFullPath);
+
+                if (aIsInUserPath && !bIsInUserPath) return -1;
+                if (!bIsInUserPath && aIsInUserPath) return 1;
+
+                return a.name.localeCompare(b.name);
+            });
+
+            nodes.forEach(node => {
+                const nodeFullPath = currentFullPath ? `${currentFullPath}>${node.name}` : node.name;
+                if (node.children) {
+                    this._sortHierarchyForUserDisplay(node.children, userPath, nodeFullPath);
+                }
+            });
+        },
+
+            _onDataLoaded: function(data) {
+        this.state.structureData = data.structure || {};
+        this.state.structureData.hierarchy = data.hierarchy;
+        this.state.rankHierarchy = data.rankHierarchy || [];
+        this.state.allLocations = data.allLocations || [];
+        this.state.timeInRankRequirements = data.timeInRankRequirements || {};
+        this.state.ubtSettings = data.ubtSettings || {};
+        this.state.emailRequirement = data.emailRequirement || {};
+        this.state.customFieldsConfig = data.customFieldsConfig || [];
+        this.state.customFieldsUiEditable = data.customFieldsUiEditable || false;
+        this.state.validationRules = data.validationRules || {};
+        this.state.sheetAccessConfig = data.sheetAccessConfig || {};
+        this.state.userData = data.userData || null;
+        this.state.companyCache = data.companymen || [];
+        this.state.availabilityMap = data.availabilityMap || {};
+        this.state.totalSlotsMap = data.totalSlotsMap || {};
+
+        if (this.state.isInitialUiBuilt) return; 
+        this.state.isInitialUiBuilt = true;
+
+        const userPath = this.state.userData?.locationPath;
+        if (userPath && this.state.structureData.hierarchy) {
+            this._sortHierarchyForUserDisplay(this.state.structureData.hierarchy, userPath);
+        }
+
+        const personSelector = this.elements.personSelector;
+        personSelector.innerHTML = '';
+        const placeholder = new Option('[ Select Member ]', '');
+        placeholder.disabled = true;
+        placeholder.classList.add('placeholder-option');
+        personSelector.appendChild(placeholder);
+        personSelector.disabled = true;
+
+        this._populateSectionSelector();
+        this._populateLocationSelector();
+        this._addEventListeners();
+        this.resetPersonSelection();
+
+        this.elements.mainContainer.style.display = 'flex';
+
+        this.elements.personSearchInput.placeholder = 'Search by name...';
+
+        if (!this.state.isSearchMode && this.elements.sectionSelector.value) {
+            this.onSectionSelect();
+        }
+
+        this.elements.spinner.style.display = 'none';
+        this._setFormInteractionEnabled(true);
+    },
+
+        _addEventListeners: function() {
+           this.state.debouncedSearch = debounce(this.onPersonSearchInput.bind(this), 300);
+            this.elements.Form.addEventListener('submit', (e) => {
+              e.preventDefault();
+              this.submitForm();
+            });
+
+           const usernameRules = this.state.validationRules.USERNAME;
+           if (usernameRules && usernameRules.REGEX) {
+               this._applyMask(this.elements.personSearchInput, {
+                   mask: new RegExp(usernameRules.REGEX)
+               });
+           } else {
+                this._applyMask(this.elements.personSearchInput, {
+                   mask: /^[a-zA-Z0-9_]{0,20}$/
+               });
+           }
+           this.elements.sectionSelector.addEventListener('change', this.onSectionSelect.bind(this));
+
+           this.elements.customSelectToggle.addEventListener('click', () => {
+             const isOpen = this.elements.customSelectOptions.style.display === 'block';
+             if (isOpen) {
+               this.closeCustomSelect();
+             } else {
+               this.openCustomSelect();
+             }
+           });
+
+           this.elements.customSelectToggle.addEventListener('wheel', this.handleCustomSelectWheel.bind(this), { passive: false });
+
+           this.elements.customSelectToggle.addEventListener('keydown', (e) => {
+             switch(e.key) {
+               case 'ArrowDown':
+               case 'ArrowUp':
+                 e.preventDefault();
+                 if (this.elements.customSelectOptions.style.display !== 'block') {
+                   this.openCustomSelect();
+                 }
+                 this.navigateCustomSelectOptions(e.key === 'ArrowDown' ? 1 : -1);
+                 break;
+               case 'Enter':
+               case ' ':
+                 e.preventDefault();
+                 const isOpen = this.elements.customSelectOptions.style.display === 'block';
+                 if (isOpen) this.closeCustomSelect();
+                 else this.openCustomSelect();
+                 break;
+               case 'Escape':
+                 this.closeCustomSelect();
+                 break;
+             }
+           });
+
+           this.elements.customSelectList.addEventListener('click', (e) => {
+             const li = e.target.closest('li');
+             if (!li) return;
+
+             if (li.classList.contains('has-children')) {
+               const isExpanded = li.getAttribute('aria-expanded') === 'true';
+               li.setAttribute('aria-expanded', String(!isExpanded));
+             }
+
+             if (li.dataset.value) {
+                 this.selectSection(li.dataset.value);
+              }
+           });
+
+           document.addEventListener('click', (e) => {
+             if (!e.target.closest('#custom-select-container')) {
+               this.closeCustomSelect();
+             }
+           });
+
+           [this.elements.personSelector, this.elements.rankSelector, this.elements.locationSelector].forEach(sel => {
+                sel.addEventListener('change', () => {
+                    if (sel.value) {
+                        sel.classList.remove('select-placeholder');
+                    } else {
+                        sel.classList.add('select-placeholder');
+                    }
+                });
+           });
+
+           this.elements.personSelector.addEventListener('change', this.onPersonSelect.bind(this));
+           this.elements.rankSelector.addEventListener('change', this.onRankOrLocationChange.bind(this));
+           this.elements.locationSelector.addEventListener('change', this.onRankOrLocationChange.bind(this));
+           this.elements.deleteButton.addEventListener('click', this.confirmAndDelete.bind(this));
+           this.elements.loaButton.addEventListener('click', this.manageLoa.bind(this));
+           this.elements.customFieldsButton.addEventListener('click', this.showCustomFieldsDialog.bind(this));
+           this.elements.customFieldsForm.addEventListener('submit', (e) => {
+               e.preventDefault();
+               this.saveCustomFields();
+           });
+           this.elements.cfCancelButton.addEventListener('click', () => {
+               this.elements.customFieldsContainer.style.display = 'none';
+           });
+           this.elements.searchToggleButton.addEventListener('click', this.toggleSearchMode.bind(this));
+           this.elements.personSearchInput.addEventListener('input', this.state.debouncedSearch);
+           this.elements.personSearchInput.addEventListener('keydown', this.onPersonSearchKeyDown.bind(this));
+           this.elements.genericConfirmButton.addEventListener('click', () => {
+             if (this.confirmationCallback) this.confirmationCallback(true);
+           });
+           this.elements.genericCancelButton.addEventListener('click', () => {
+             if (this.confirmationCallback) this.confirmationCallback(false);
+           });
+           this.elements.choiceCancelButton.addEventListener('click', () => {
+              this.elements.choicePromptContainer.style.display = 'none';
+              if (this.state.choiceResolver) {
+                  this.state.choiceResolver(null);
+                  this.state.choiceResolver = null;
+              }
+          });
+
+          this.elements.personSelector.addEventListener('change', () => { this.state.selectedRankTitle = null; });
+          this.elements.sectionSelector.addEventListener('change', () => { this.state.selectedRankTitle = null; });
+           this.elements.loaForm.addEventListener('submit', (e) => {
+             e.preventDefault();
+             this.onLoaConfirm();
+           });
+           this.elements.loaCancelButton.addEventListener('click', this.onLoaCancel.bind(this));
+           this.elements.loaEndNowButton.addEventListener('click', this.onLoaEndNow.bind(this));
+
+           this.elements.emailCancelButton.addEventListener('click', () => {
+             this.elements.emailPromptContainer.style.display = 'none';
+           });
+           this.elements.loaReason.addEventListener('input', () => {
+             this.elements.loaConfirmButton.disabled = !this.loaPicker.getStartDate() || !this.loaPicker.getEndDate() || !this.elements.loaReason.value.trim();
+           });
+
+           window.addEventListener('keydown', (event) => {
+             if (event.altKey && event.key === 'Enter') {
+                 event.preventDefault();
+
+                 if (!this.elements.submitButton.disabled) {
+                     this.elements.submitButton.click();
+                 }
+             }
+           });
+
+           this.elements.sectionSelector.addEventListener('wheel', this._cycleSelectOptionOnWheel.bind(this), { passive: false });
+                     this.elements.personSelector.addEventListener('wheel', this._cycleSelectOptionOnWheel.bind(this), { passive: false });
+                     this.elements.rankSelector.addEventListener('wheel', this._cycleSelectOptionOnWheel.bind(this), { passive: false });
+                     this.elements.locationSelector.addEventListener('wheel', this._cycleSelectOptionOnWheel.bind(this), { passive: false });
+           this.elements.customSelectOptions.addEventListener('wheel', (e) => {
+               e.preventDefault();
+               this.elements.customSelectOptions.scrollTop += e.deltaY;
+           }, { passive: false });
+
+          this.elements.newLocationCustomToggle.addEventListener('click', () => {
+            const isOpen = this.elements.newLocationCustomOptions.style.display === 'block';
+            if (isOpen) {
+              this.closeLocationSelect();
+            } else {
+              this.openLocationSelect();
+            }
+          });
+
+           this.elements.newLocationCustomToggle.addEventListener('wheel', this.handleNewLocationSelectWheel.bind(this), { passive: false });
+
+           this.elements.newLocationCustomToggle.addEventListener('keydown', (e) => {
+             switch(e.key) {
+               case 'ArrowDown':
+               case 'ArrowUp':
+                 e.preventDefault();
+                 if (this.elements.newLocationCustomOptions.style.display !== 'block') {
+                   this.openLocationSelect();
+                 }
+                 this.navigateLocationSelectOptions(e.key === 'ArrowDown' ? 1 : -1);
+                 break;
+               case 'Enter':
+               case ' ':
+                 e.preventDefault();
+                 const isOpen = this.elements.newLocationCustomOptions.style.display === 'block';
+                 if (isOpen) this.closeLocationSelect();
+                 else this.openLocationSelect();
+                 break;
+               case 'Escape':
+                 this.closeLocationSelect();
+                 break;
+             }
+           });
+
+          this.elements.newLocationCustomList.addEventListener('click', (e) => {
+            const li = e.target.closest('li');
+            if (li && li.dataset.value && !li.classList.contains('unavailable-option')) {
+                this.selectLocation(li.dataset.value);
+            }
+          });
+
+          document.addEventListener('click', (e) => {
+            if (!e.target.closest('#new-location-custom-container')) {
+              this.closeLocationSelect();
+            }
+          });
+        },
+       openCustomSelect: function() {
+           this.elements.customSelectOptions.style.display = 'block';
+           this.elements.customSelectToggle.setAttribute('aria-expanded', 'true');
+
+           this.boundSectionKeyDown = (e) => this.handleTreeKeyDown(e, this.elements.customSelectList, this.closeCustomSelect.bind(this));
+           document.addEventListener('keydown', this.boundSectionKeyDown);
+
+           const items = Array.from(this.elements.customSelectList.querySelectorAll('li')).filter(li => li.offsetParent !== null);
+           const selectedItem = items.find(item => item.getAttribute('aria-selected') === 'true');
+           const firstItem = items[0];
+
+           if (selectedItem) {
+               selectedItem.classList.add('focused');
+               selectedItem.setAttribute('tabindex', '0');
+               selectedItem.scrollIntoView({ block: 'nearest' });
+               this.elements.customSelectToggle.setAttribute('aria-activedescendant', selectedItem.id);
+           } else if (firstItem) {
+               firstItem.classList.add('focused');
+               firstItem.setAttribute('tabindex', '0');
+               firstItem.scrollIntoView({ block: 'nearest' });
+               this.elements.customSelectToggle.setAttribute('aria-activedescendant', firstItem.id);
+           }
+
+           this._ensureElementIsVisible(this.elements.mainContainer, this.elements.customSelectOptions);
+       },
+       closeCustomSelect: function() {
+           this.elements.customSelectOptions.style.display = 'none';
+           this.elements.customSelectToggle.setAttribute('aria-expanded', 'false');
+           this.elements.customSelectToggle.removeAttribute('aria-activedescendant');
+
+           if (this.boundSectionKeyDown) {
+              document.removeEventListener('keydown', this.boundSectionKeyDown);
+           }
+           const focused = this.elements.customSelectList.querySelector('.focused');
+           if (focused) {
+               focused.classList.remove('focused');
+               focused.setAttribute('tabindex', '-1');
+           }
+       },
+
+       navigateCustomSelectOptions: function(direction) {
+           const options = Array.from(this.elements.customSelectList.querySelectorAll('li[role="option"]'));
+           if (options.length === 0) return;
+
+           const currentlyFocused = this.elements.customSelectList.querySelector('.focused');
+           if (currentlyFocused) currentlyFocused.classList.remove('focused');
+
+           if (this.focusedOptionIndex === undefined) {
+               this.focusedOptionIndex = direction > 0 ? 0 : options.length - 1;
+           } else {
+               this.focusedOptionIndex += direction;
+               if (this.focusedOptionIndex >= options.length) {
+                   this.focusedOptionIndex = 0;
+               } else if (this.focusedOptionIndex < 0) {
+                   this.focusedOptionIndex = options.length - 1;
+               }
+           }
+
+           const newFocused = options[this.focusedOptionIndex];
+           if (newFocused) {
+               newFocused.classList.add('focused');
+               this.elements.customSelectToggle.setAttribute('aria-activedescendant', 'section-option-' + newFocused.textContent.replace(/\s+/g, '-').toLowerCase());
+               newFocused.scrollIntoView({ block: 'nearest' });
+           }
+       },
+       handleCustomSelectWheel: function(event) {
+          event.preventDefault();
+          const select = this.elements.sectionSelector;
+
+          const validOptions = Array.from(select.options).filter(opt => opt.value);
+          if (validOptions.length <= 1) return;
+
+          const currentValidIndex = validOptions.findIndex(opt => opt.value === select.value);
+          const direction = event.deltaY > 0 ? 1 : -1;
+
+          let nextValidIndex = (currentValidIndex !== -1 ? currentValidIndex : -1) + direction;
+          if (nextValidIndex >= validOptions.length) {
+            nextValidIndex = 0;
+          }
+          if (nextValidIndex < 0) {
+            nextValidIndex = validOptions.length - 1;
+          }
+
+          const nextValue = validOptions[nextValidIndex].value;
+
+           this.selectSection(nextValue);
+        },
+
+        handleNewLocationSelectWheel: function(event) {
+           if (this.elements.newLocationCustomOptions.style.display === 'block') {
+              return;
+           }
+
+           event.preventDefault();
+           const select = this.elements.locationSelector;
+
+           const validOptions = Array.from(select.options).filter(opt => opt.value && !opt.classList.contains('unavailable-option'));
+           if (validOptions.length <= 1) return;
+
+           const currentValidIndex = validOptions.findIndex(opt => opt.value === select.value);
+           const direction = event.deltaY > 0 ? 1 : -1;
+
+           let nextValidIndex = (currentValidIndex !== -1 ? currentValidIndex : -1) + direction;
+           if (nextValidIndex >= validOptions.length) {
+             nextValidIndex = 0;
+           }
+           if (nextValidIndex < 0) {
+             nextValidIndex = validOptions.length - 1;
+           }
+
+           const nextValue = validOptions[nextValidIndex].value;
+
+           this.selectLocation(nextValue);
+        },
+
+     openLocationSelect: function() {
+         if (this.elements.newLocationCustomToggle.disabled) return;
+         this.elements.newLocationCustomOptions.style.display = 'block';
+         this.elements.newLocationCustomToggle.setAttribute('aria-expanded', 'true');
+
+         this.boundLocationKeyDown = (e) => this.handleTreeKeyDown(e, this.elements.newLocationCustomList, this.closeLocationSelect.bind(this));
+         document.addEventListener('keydown', this.boundLocationKeyDown);
+
+         const items = Array.from(this.elements.newLocationCustomList.querySelectorAll('li')).filter(li => li.offsetParent !== null);
+         const selectedItem = items.find(item => item.getAttribute('aria-selected') === 'true');
+         const firstItem = items[0];
+
+         if (selectedItem) {
+             selectedItem.classList.add('focused');
+             selectedItem.setAttribute('tabindex', '0');
+             selectedItem.scrollIntoView({ block: 'nearest' });
+             this.elements.newLocationCustomToggle.setAttribute('aria-activedescendant', selectedItem.id);
+         } else if (firstItem) {
+             firstItem.classList.add('focused');
+             firstItem.setAttribute('tabindex', '0');
+             firstItem.scrollIntoView({ block: 'nearest' });
+             this.elements.newLocationCustomToggle.setAttribute('aria-activedescendant', firstItem.id);
+         }
+
+         this._ensureElementIsVisible(this.elements.mainContainer, this.elements.newLocationCustomOptions);
+     },
+      closeLocationSelect: function() {
+          this.elements.newLocationCustomOptions.style.display = 'none';
+          this.elements.newLocationCustomToggle.setAttribute('aria-expanded', 'false');
+          this.elements.newLocationCustomToggle.removeAttribute('aria-activedescendant');
+
+          if (this.boundLocationKeyDown) {
+              document.removeEventListener('keydown', this.boundLocationKeyDown);
+          }
+          const focused = this.elements.newLocationCustomList.querySelector('.focused');
+          if (focused) {
+              focused.classList.remove('focused');
+              focused.setAttribute('tabindex', '-1');
+          }
+      },
+
+      navigateLocationSelectOptions: function(direction) {
+          const options = Array.from(this.elements.newLocationCustomList.querySelectorAll('li[role="option"]'));
+          if (options.length === 0) return;
+
+          const currentlyFocused = this.elements.newLocationCustomList.querySelector('.focused');
+          if (currentlyFocused) currentlyFocused.classList.remove('focused');
+
+          if (this.locationFocusedOptionIndex === undefined) {
+              this.locationFocusedOptionIndex = direction > 0 ? 0 : options.length - 1;
+          } else {
+              this.locationFocusedOptionIndex += direction;
+              if (this.locationFocusedOptionIndex >= options.length) {
+                  this.locationFocusedOptionIndex = 0;
+              } else if (this.locationFocusedOptionIndex < 0) {
+                  this.locationFocusedOptionIndex = options.length - 1;
+              }
+          }
+
+          const newFocused = options[this.locationFocusedOptionIndex];
+          if (newFocused) {
+              newFocused.classList.add('focused');
+              this.elements.newLocationCustomToggle.setAttribute('aria-activedescendant', 'location-option-' + newFocused.textContent.replace(/[\s>]/g, '-').toLowerCase());
+              newFocused.scrollIntoView({ block: 'nearest' });
+          }
+      },
+
+    handleTreeKeyDown: function(event, listElement, closeCallback) {
+        if (listElement.style.display !== 'block') return;
+
+        const items = Array.from(listElement.querySelectorAll('li')).filter(li => li.offsetParent !== null);
+        if (items.length === 0) return;
+
+        if (event.key.length === 1 && event.key.match(/[a-z0-9\s]/i)) {
+            event.preventDefault();
+            clearTimeout(this.state.searchTimeout);
+            this.state.searchString += event.key.toLowerCase();
+            this.state.searchTimeout = setTimeout(() => { this.state.searchString = ''; }, 700);
+
+            const currentFocused = listElement.querySelector('.focused');
+
+            const selectableItems = Array.from(listElement.querySelectorAll('li[data-value]:not(.unavailable-option)')).filter(li => li.offsetParent !== null);
+            const startIndex = currentFocused ? selectableItems.indexOf(currentFocused) + 1 : 0;
+
+            for (let i = 0; i < selectableItems.length; i++) {
+                const itemIndex = (startIndex + i) % selectableItems.length;
+                const item = selectableItems[itemIndex];
+                if (item.querySelector('span').textContent.trim().toLowerCase().startsWith(this.state.searchString)) {
+                    if (currentFocused) currentFocused.classList.remove('focused');
+                    item.classList.add('focused');
+                    item.scrollIntoView({ block: 'nearest' });
+                    return;
+                }
+            }
+            return;
+        }
+
+        event.preventDefault();
+
+        const current = listElement.querySelector('.focused');
+        const currentIndex = current ? items.indexOf(current) : -1;
+        let nextIndex = currentIndex;
+
+        switch (event.key) {
+            case 'ArrowDown':
+                nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+                break;
+            case 'ArrowUp':
+                nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+                break;
+            case 'ArrowRight':
+                if (current && current.classList.contains('has-children')) {
+                    current.setAttribute('aria-expanded', 'true');
+                }
+                break;
+            case 'ArrowLeft':
+                if (current && current.classList.contains('has-children') && current.getAttribute('aria-expanded') === 'true') {
+                    current.setAttribute('aria-expanded', 'false');
+                }
+                break;
+            case 'Enter':
+                if (current) current.click();
+                return;
+            case 'Escape':
+            case 'Tab':
+                closeCallback();
+                return;
+        }
+
+        if (nextIndex !== currentIndex) {
+            if (current) {
+                current.classList.remove('focused');
+                current.setAttribute('tabindex', '-1');
+            }
+            const nextItem = items[nextIndex];
+            if (nextItem) {
+                nextItem.classList.add('focused');
+                nextItem.setAttribute('tabindex', '0');
+                nextItem.scrollIntoView({ block: 'nearest' });
+
+                const toggleButton = listElement === this.elements.customSelectList ?
+                    this.elements.customSelectToggle : this.elements.newLocationCustomToggle;
+                toggleButton.setAttribute('aria-activedescendant', nextItem.id);
+            }
+        }
+    },
+        selectLocation: function(value) {
+          const selectedLi = this.elements.newLocationCustomList.querySelector(`li[data-value="${value}"]`);
+          if (!selectedLi) return;
+
+          this.elements.newLocationCustomList.querySelectorAll('li[role="option"]').forEach(li => {
+              li.setAttribute('aria-selected', 'false');
+          });
+          selectedLi.setAttribute('aria-selected', 'true');
+
+          const fullText = selectedLi.querySelector('span').textContent;
+          const cleanText = fullText.replace(/\s\(.*\)/, '');
+          this.elements.newLocationCustomToggle.textContent = cleanText;
+
+          this.elements.newLocationCustomToggle.classList.add('has-selection');
+          this.elements.newLocationCustomToggle.classList.remove('placeholder');
+          this.elements.newLocationCustomToggle.setAttribute('aria-activedescendant', selectedLi.id);
+
+          this.closeLocationSelect();
+
+          this.elements.locationSelector.value = value;
+          this.elements.locationSelector.dispatchEvent(new Event('change'));
+      },
+       _cycleSelectOptionOnWheel: function(event) {
+           event.preventDefault();
+           const select = event.target;
+           const options = select.options;
+           if (options.length <= 1) return;
+
+           const direction = event.deltaY > 0 ? 1 : -1;
+           let newIndex = select.selectedIndex;
+           let attempts = 0;
+           do {
+             newIndex = (newIndex + direction + options.length) % options.length;
+             attempts++;
+             if (attempts > options.length) return;
+           } while (options[newIndex].disabled || options[newIndex].value === "");
+
+           select.selectedIndex = newIndex;
+           select.dispatchEvent(new Event('change'));
+         },
+        onSectionSelect: function() {
+                    const selectedSection = this.elements.sectionSelector.value;
+                    this.resetPersonView();
+                    if (selectedSection) {
+                      const membersToShow = this.state.companyCache.filter(p => p.locationPath === selectedSection);
+
+                      this._populatePersonSelector(membersToShow);
+                      this.elements.personSelector.disabled = false;
+                      this.elements.personSelector.focus();
+                    }
+                },
+
+        onPersonSelect: function() {
+          if (this.state.isProcessingAction) return; 
+            const selectedIdentifier = this.elements.personSelector.value;
+            if (selectedIdentifier) {
+                const person = this.state.companyCache.find(p => p.sourceIdentifier === selectedIdentifier);
+                this._loadPersonIntoEditor(person);
+            } else {
+                this.resetPersonSelection();
+            }
+        },
+        _loadPersonIntoEditor: function(person) {
+    if (!person || !person.sourceIdentifier) {
+        this.resetPersonSelection();
+        return;
+    }
+
+    const fullPersonData = this.state.companyCache.find(p => p.sourceIdentifier === person.sourceIdentifier);
+    if (!fullPersonData) {
+        this.resetPersonSelection();
+        return;
+    }
+
+    this.state.lastInteractedIdentifier = fullPersonData.sourceIdentifier;
+    this.state.selectedPerson = fullPersonData;
+    this.state.selectedPersonIdentifier = fullPersonData.sourceIdentifier;
+
+    this._populateRankSelector();
+    this.elements.rankSelector.value = fullPersonData.rank;
+
+    this.elements.locationSelector.value = fullPersonData.locationPath || '';
+
+    this.elements.rankSelector.classList.remove('select-placeholder');
+    this.elements.rankSelector.disabled = false;
+    this.elements.locationSelector.disabled = false;
+
+    const selectedLocationOption = Array.from(this.elements.newLocationCustomList.querySelectorAll('li[data-value]')).find(li => li.dataset.value === person.locationPath);
+    if (selectedLocationOption) {
+        this.elements.newLocationCustomToggle.textContent = selectedLocationOption.querySelector('span').textContent.replace(/\s\(.*\)/, '');
+        this.elements.newLocationCustomToggle.classList.remove('placeholder');
+        this.elements.newLocationCustomToggle.classList.add('has-selection');
+    } else {
+        this.elements.newLocationCustomToggle.textContent = person.location;
+        this.elements.newLocationCustomToggle.classList.remove('placeholder');
+        this.elements.newLocationCustomToggle.classList.add('has-selection');
+    }
+
+    this.elements.deleteButton.disabled = false;
+    this.elements.loaButton.disabled = false;
+    if (this.state.customFieldsUiEditable && this.state.customFieldsConfig.length > 0) {
+      this.elements.customFieldsButton.disabled = false;
+      this.elements.customFieldsButton.classList.remove('hidden');
+    }
+
+    this._setFormInteractionEnabled(true); 
+
+    this.onRankOrLocationChange();
+},
+        _updatePersonInCache: function(updatedPerson) {
+            const personIndex = this.state.companyCache.findIndex(p => p.sourceIdentifier === updatedPerson.sourceIdentifier);
+            if (personIndex > -1) {
+                this.state.companyCache[personIndex] = updatedPerson;
+            } else {
+                this.state.companyCache.push(updatedPerson);
+            }
+        },
+  onRankOrLocationChange: async function() {
+  this.state.selectedRankTitle = null;
+  this.updateDestinationOptions();
+
+  const originalLocation = this.state.selectedPerson.locationPath;
+  const currentLocationSelection = this.elements.locationSelector.value;
+
+  if (!currentLocationSelection) {
+    const originalLocationOption = this.elements.locationSelector.querySelector(`option[value="${originalLocation}"]`);
+    if (originalLocationOption && !originalLocationOption.disabled) {
+      this.selectLocation(originalLocation);
+    }
+  }
+
+  const validOptions = Array.from(this.elements.locationSelector.options).filter(opt => opt.value && !opt.disabled);
+  if (validOptions.length === 1) {
+      const onlyOptionValue = validOptions[0].value;
+      if (this.elements.locationSelector.value !== onlyOptionValue) {
+          this.selectLocation(onlyOptionValue);
+      }
+  }
+
+  const selectedRank = this.elements.rankSelector.value;
+  const selectedLocation = this.elements.locationSelector.value;
+
+  if (selectedRank && selectedLocation) {
+      const availability = this.state.availabilityMap[selectedLocation];
+      const titledSlots = availability?._titledSlots?.[selectedRank.toUpperCase()];
+
+      if (titledSlots) {
+          const availableTitles = Object.keys(titledSlots).filter(title => titledSlots[title] > 0);
+
+          if (availableTitles.length === 1) {
+              this.state.selectedRankTitle = availableTitles[0];
+          }
+      }
+  }
+
+  this._checkCanSubmit();
+  this._updateManagementTirWarning(); 
+},
+        updateDestinationOptions: function() {
+          const selectedRank = this.elements.rankSelector.value;
+          if (!this.state.selectedPerson || !selectedRank) return;
+
+          const originalPerson = this.state.selectedPerson;
+          const originalPersonPath = this.state.allLocations.find(p => p.endsWith(originalPerson.location));
+          const memo = {};
+          const getTotalSlotsForRank = (path, rank) => {
+              const totalNodeSlots = this.state.totalSlotsMap[path];
+              if (!totalNodeSlots) return 0;
+
+              const rankUpper = rank.toUpperCase();
+              let total = totalNodeSlots[rankUpper] || 0;
+
+              const titledSlots = totalNodeSlots._titledSlots?.[rankUpper];
+              if (titledSlots) {
+                  total += Object.values(titledSlots).reduce((sum, count) => sum + count, 0);
+              }
+              return total;
+          };
+
+          const getAvailabilityForPath = (path) => {
+              const availabilityForNode = this.state.availabilityMap[path];
+              if (!availabilityForNode) return 0;
+
+              const rankUpper = selectedRank.toUpperCase();
+              let total = 0;
+
+              if (typeof availabilityForNode[rankUpper] === 'number') {
+                  total += availabilityForNode[rankUpper];
+              }
+
+              const titledSlots = availabilityForNode._titledSlots?.[rankUpper];
+              if (titledSlots) {
+                  for (const title in titledSlots) {
+                      let availableInTitle = titledSlots[title];
+                      if (path === originalPersonPath && selectedRank === originalPerson.rank && title === originalPerson.rankKey) {
+                          availableInTitle++;
+                      }
+                      total += availableInTitle;
+                  }
+              } else {
+                if (path === originalPersonPath && selectedRank === originalPerson.rank && !originalPerson.rankKey) {
+                    total++;
+                }
+              }
+
+              return total;
+          };
+
+          const getDescendantAvailability = (node, path) => {
+            if (memo[path] !== undefined) return memo[path];
+
+            let total = getAvailabilityForPath(path);
+
+            if (node.children) {
+              for (const child of node.children) {
+                const childPath = `${path}>${child.name}`;
+                total += getDescendantAvailability(child, childPath);
+              }
+            }
+            memo[path] = total;
+            return total;
+          };
+          const updateNodeDisplay = (node, currentPath = '') => {
+            const newPath = currentPath ? `${currentPath}>${node.name}` : node.name;
+            const totalSlotsForRank = getTotalSlotsForRank(newPath, selectedRank);
+            const directAvailability = getAvailabilityForPath(newPath);
+            const totalDescendantAvailability = getDescendantAvailability(node, newPath);
+
+            let isSelectable = directAvailability > 0;
+
+            const li = this.elements.newLocationCustomList.querySelector(`li[data-value="${newPath}"]`);
+            const option = this.elements.locationSelector.querySelector(`option[value="${newPath}"]`);
+
+            if (li) {
+                const span = li.querySelector('span');
+                li.classList.toggle('unavailable-option', !isSelectable);
+                li.style.cursor = isSelectable ? 'pointer' : 'not-allowed';
+
+                if (option) {
+                    option.classList.toggle('unavailable-option', !isSelectable);
+                    option.disabled = !isSelectable;
+                }
+
+                const hasChildren = node.children && node.children.length > 0;
+                const displayCount = hasChildren ? totalDescendantAvailability : directAvailability;
+
+                let displayText = node.name;
+                if (displayCount > 0) {
+                    displayText += ` (${displayCount} available)`;
+                } else if (totalSlotsForRank > 0 && newPath !== originalPersonPath) {
+                   displayText += ` (Full)`;
+                 }
+                 span.textContent = displayText;
+             }
+            if (node.children) {
+              node.children.forEach(child => updateNodeDisplay(child, newPath));
+            }
+          };
+
+          this.state.structureData.hierarchy.forEach(node => updateNodeDisplay(node));
+
+          const currentSelectionValue = this.elements.locationSelector.value;
+          if (currentSelectionValue) {
+            const currentSelectedLi = this.elements.newLocationCustomList.querySelector(`li[data-value="${currentSelectionValue}"]`);
+            if (currentSelectedLi && currentSelectedLi.classList.contains('unavailable-option')) {
+              this.elements.locationSelector.value = "";
+              this.elements.newLocationCustomToggle.textContent = '[ Select Section ]';
+              this.elements.newLocationCustomToggle.classList.remove('has-selection');
+              this.elements.newLocationCustomToggle.classList.add('placeholder');
+              this._checkCanSubmit();
+            }
+          }
+        },
+         _checkCanSubmit: function() {
+          if (!this.state.selectedPersonIdentifier || !this.elements.rankSelector.value || !this.elements.locationSelector.value) {
+            this.elements.submitButton.disabled = true;
+            return;
+          }
+          const selectedOption = this.elements.locationSelector.options[this.elements.locationSelector.selectedIndex];
+          if (selectedOption?.classList.contains('unavailable-option')) {
+            this.elements.submitButton.disabled = true;
+            return;
+          }
+
+          const isRankChanged = this.state.selectedPerson.rank !== this.elements.rankSelector.value;
+          const isLocationChanged = this.state.selectedPerson.locationPath !== this.elements.locationSelector.value;
+
+          const isTitleChanged = this.state.selectedRankTitle && this.state.selectedRankTitle !== this.state.selectedPerson.rankKey;
+
+          if (this.elements.rankSelector.value && this.elements.locationSelector.value) {
+            const availability = this.state.availabilityMap[this.elements.locationSelector.value];
+            const titledSlots = availability?._titledSlots?.[this.elements.rankSelector.value.toUpperCase()];
+            if (titledSlots) {
+              const availableTitles = Object.keys(titledSlots).filter(title => titledSlots[title] > 0);
+              if (availableTitles.length > 1) {
+                this.elements.submitButton.disabled = false;
+                return;
+              }
+            }
+          }
+
+          this.elements.submitButton.disabled = !(isRankChanged || isLocationChanged || isTitleChanged);
+        },
+        _populatePersonSelector: function(members) {
+          const selector = this.elements.personSelector;
+          selector.innerHTML = '';
+          const placeholder = document.createElement('option');
+          selector.classList.add('select-placeholder');
+          placeholder.value = '';
+          placeholder.textContent = '[ Select Member ]';
+          placeholder.classList.add('placeholder-option');
+          selector.appendChild(placeholder);
+          if (members.length === 0) {
+            selector.disabled = true;
+            return;
+          }
+
+          members.sort((a, b) => {
+            const rA = this.state.rankHierarchy.findIndex(r => r.name === a.rank);
+            const rB = this.state.rankHierarchy.findIndex(r => r.name === b.rank);
+
+            if (rA !== rB) return rB - rA;
+
+            const dateA = this._parseDate(a.joinDate) || new Date(0);
+            const dateB = this._parseDate(b.joinDate) || new Date(0);
+            if (dateA.getTime() !== dateB.getTime()) return dateA - dateB;
+
+            return a.player.localeCompare(b.player);
+          });
+
+          members.forEach(p => {
+            const displayName = p.onLOA ? `${p.player} (LOA)` : p.player;
+
+            const rankDisplay = p.rankAbbr || p.rank;
+            const option = new Option(`${displayName} (${rankDisplay})`, p.sourceIdentifier);
+
+            if(p.onLOA) {
+                option.style.fontStyle = 'italic';
+                option.style.color = '#777';
+
+                if (p.loaData) {
+                  const startDate = new Date(p.loaData.startDate).toLocaleDateString();
+                  const endDate = new Date(p.loaData.endDate).toLocaleDateString();
+                  const reason = p.loaData.reason || 'Not specified';
+                  option.title = `On Leave of Absence\nFrom: ${startDate}\nTo: ${endDate}\nReason: ${reason}`;
+                } else {
+                  option.title = `On Leave of Absence. Reason: ${p.loaReason || 'Not specified'}`;
+                }
+            }
+            selector.appendChild(option);
+          });
+        },
+
+        _populateSectionSelector: function() {
+            const list = this.elements.customSelectList;
+            list.innerHTML = '';
+            this.elements.sectionSelector.innerHTML = '<option value="">[ Select Section ]</option>';
+            this.elements.customSelectToggle.textContent = '[ Select Section ]';
+            this.elements.customSelectToggle.classList.add('placeholder');
+
+            const fragment = document.createDocumentFragment();
+
+            const buildOptions = (nodes, parentUl, isTopLevel = false, currentPath = '') => {
+                nodes.forEach(node => {
+                    const hasChildren = node.children && node.children.length > 0;
+                    const newPath = currentPath ? `${currentPath}>${node.name}` : node.name;
+
+                    const li = document.createElement('li');
+                    const span = document.createElement('span');
+                    span.textContent = node.name;
+                    li.appendChild(span);
+
+                    li.dataset.value = newPath;
+                    li.id = 'section-option-' + node.name.replace(/\s+/g, '-').toLowerCase();
+                    li.setAttribute('role', 'option');
+                    li.setAttribute('aria-selected', 'false');
+                    li.setAttribute('tabindex', '-1');
+
+                    if (isTopLevel) {
+                        li.classList.add('top-level-item');
+                    }
+                    parentUl.appendChild(li); 
+
+                    this.elements.sectionSelector.appendChild(new Option(node.name, newPath));
+
+                    if (hasChildren) {
+                        const subUl = document.createElement('ul');
+                        li.appendChild(subUl);
+                        buildOptions(node.children, subUl, false, newPath);
+                    }
+                });
+            };
+
+            if (this.state.structureData.hierarchy) {
+
+               buildOptions(this.state.structureData.hierarchy, fragment, true);
+            }
+
+            list.appendChild(fragment);
+        },
+        _populateRankSelector: function() {
+          this.elements.rankSelector.innerHTML = '';
+          this.state.rankHierarchy.forEach(r => {
+            const displayText = r.abbr || r.name;
+            const optionValue = r.name;
+            this.elements.rankSelector.appendChild(new Option(displayText, optionValue));
+          });
+        },
+
+        _populateLocationSelector: function() {
+          const list = this.elements.newLocationCustomList;
+          list.innerHTML = '';
+          this.elements.locationSelector.innerHTML = '';
+
+          const fragment = document.createDocumentFragment();
+
+          const buildOptions = (nodes, parentUl, isTopLevel = false, currentPath = '') => {
+              nodes.forEach(node => {
+                  const hasChildren = node.children && node.children.length > 0;
+                  const newPath = currentPath ? `${currentPath}>${node.name}` : node.name;
+                  const fullLocationPath = this.state.allLocations.find(locPath => locPath === newPath);
+
+                  if (fullLocationPath) {
+                      const li = document.createElement('li');
+                      const span = document.createElement('span');
+                      span.textContent = node.name;
+                      li.appendChild(span);
+                      li.dataset.value = newPath;
+                      li.id = 'location-option-' + newPath.replace(/>/g, '-').toLowerCase();
+                      li.setAttribute('role', 'option');
+                      li.setAttribute('aria-selected', 'false');
+                      li.setAttribute('tabindex', '-1');
+                      if (isTopLevel) li.classList.add('top-level-item');
+                      parentUl.appendChild(li); 
+
+                      this.elements.locationSelector.appendChild(new Option(node.name, newPath));
+                  }
+
+                  if (hasChildren) {
+                      const subUl = document.createElement('ul');
+
+                      const parentLi = (fullLocationPath ? parentUl : list).querySelector(`li[data-value="${newPath}"]`);
+
+                      if(parentLi){
+                          parentLi.appendChild(subUl);
+                          parentLi.classList.add('has-children');
+                      } else {
+                           const structuralLi = document.createElement('li');
+                           structuralLi.innerHTML = `<span>${node.name}</span>`;
+                           structuralLi.classList.add('structural-node');
+                           if (isTopLevel) structuralLi.classList.add('top-level-item');
+                           structuralLi.appendChild(subUl);
+                           parentUl.appendChild(structuralLi); 
+                      }
+                      buildOptions(node.children, subUl, false, newPath);
+                  }
+              });
+          };
+
+          if (this.state.structureData.hierarchy) {
+
+             buildOptions(this.state.structureData.hierarchy, fragment, true);
+          }
+
+          list.appendChild(fragment);
+        },
+        resetPersonView: function() {
+          this.elements.personSelector.innerHTML = '';
+          const placeholder = new Option('[ Select Member ]', '');
+          placeholder.disabled = true;
+          placeholder.classList.add('placeholder-option');
+          this.elements.personSelector.appendChild(placeholder);
+          this.elements.personSelector.disabled = true;
+          this.elements.personSearchInput.value = '';
+          this.state.inputMasks.get('person-search-input')?.updateValue();
+          this.clearSearchSuggestions();
+          this.removeSelectedPersonChip();
+          this.resetPersonSelection();
+        },
+        toggleSearchMode: function() {
+          this.state.isSearchMode = !this.state.isSearchMode;
+          this.resetPersonView();
+          if (this.state.isSearchMode) {
+            this.elements.customSelectContainer.style.display = 'none';
+            this.elements.personSearchContainer.style.display = 'block';
+            this.elements.personSelectorGroup.style.visibility = 'hidden';
+            this.elements.sectionLabelText.textContent = 'Search';
+            this.elements.personSearchInput.focus();
+          } else {
+            this.elements.customSelectContainer.style.display = 'block';
+            this.elements.personSearchContainer.style.display = 'none';
+            this.elements.personSelectorGroup.style.visibility = 'visible';
+            this.elements.sectionLabelText.textContent = 'Browse by Section';
+
+            if (this.elements.sectionSelector.value) {
+                this.onSectionSelect();
+            }
+          }
+          this.elements.searchToggleButton.title = this.state.isSearchMode ? "Switch to browse" : "Switch to search";
+        },
+        selectSection: function(value) {
+            const selectedLi = this.elements.customSelectList.querySelector(`li[data-value="${value}"]`);
+            if (!selectedLi) return;
+
+            this.elements.customSelectList.querySelectorAll('li[role="option"]').forEach(li => {
+                li.setAttribute('aria-selected', 'false');
+            });
+            selectedLi.setAttribute('aria-selected', 'true');
+
+            this.elements.customSelectToggle.textContent = selectedLi.querySelector('span').textContent;
+            this.elements.customSelectToggle.classList.remove('placeholder');
+            this.elements.customSelectToggle.setAttribute('aria-activedescendant', selectedLi.id);
+            this.closeCustomSelect();
+
+            this.elements.sectionSelector.value = value;
+            this.elements.sectionSelector.dispatchEvent(new Event('change'));
+        },
+
+resetPersonSelection: function() {
+   this.state.selectedPerson = null;
+   this.state.selectedPersonIdentifier = null;
+   this.elements.rankSelector.value = '';
+   this.elements.rankSelector.innerHTML = '';
+   this.elements.rankSelector.classList.add('select-placeholder');
+   this.elements.locationSelector.value = '';
+   this.elements.locationSelector.classList.add('select-placeholder');
+
+   this.elements.newLocationCustomToggle.textContent = '[ Select Section ]';
+   this.elements.newLocationCustomToggle.classList.add('placeholder');
+   this.elements.newLocationCustomToggle.classList.remove('has-selection');
+
+   this.elements.customFieldsButton.classList.add('hidden');
+   this.elements.customFieldsButton.disabled = true;
+
+   if (this.elements.rankSelectorInfoIcon) { 
+     this.elements.rankSelectorInfoIcon.style.display = 'none';
+   }
+
+   this._setFormInteractionEnabled(true); 
+ },
+
+       submitForm: async function() {
+         if (!this.state.selectedPersonIdentifier) return;
+
+         this.setUiLock(true, 'Updating Member...');
+
+         const newRank = this.elements.rankSelector.value;
+         const newLocation = this.elements.locationSelector.value;
+         const confirmationMessages = [];
+         let ubtApproved = false;
+         let emailForUpdate = this.state.selectedPerson.email || null; 
+
+          if (this.state.emailRequirement && this._checkEmailRequirement(newRank)) {
+              const hasEmail = emailForUpdate && emailForUpdate.includes('@');
+              if (!hasEmail) {
+                  const providedEmail = await this.promptForEmail();
+                  if (!providedEmail) {
+                      this.setUiLock(false);
+                      return;
+                  }
+                  emailForUpdate = providedEmail;
+              }
+          }
+
+          const getRankValue = (rank) => this.state.rankHierarchy.findIndex(r => r.name.toUpperCase() === rank.toUpperCase());
+          const rankValueOld = getRankValue(this.state.selectedPerson.rank);
+          const rankValueNew = getRankValue(newRank);
+
+          const tirRequirement = this._getApplicableTir(newRank);
+          if (tirRequirement) {
+              const { rank: requiredRank, days: requiredDays } = tirRequirement;
+              const joinDate = this._parseDate(this.state.selectedPerson.joinDate);
+              const today = new Date();
+              const daysInService = Math.floor((today - joinDate) / (1000 * 60 * 60 * 24));
+              if (daysInService < requiredDays) {
+                  confirmationMessages.push(`WARNING: ${this.state.selectedPerson.player} has not met the time in service requirement for ${requiredRank} (${requiredDays} days needed).`);
+              }
+          }
+
+         const rankDifference = Math.abs(rankValueNew - rankValueOld);
+         if (rankDifference >= 3) {
+             const action = rankValueNew > rankValueOld ? "promote" : "demote";
+             confirmationMessages.push(`WARNING: You are about to ${action} ${this.state.selectedPerson.player} by ${rankDifference} ranks.`);
+         }
+
+         const triggerRank = this.state.ubtSettings.TRIGGER_RANK;
+         if (triggerRank) {
+             const triggerRankValue = getRankValue(triggerRank);
+             const isPromotionAcrossThreshold = (rankValueOld < triggerRankValue && rankValueNew >= triggerRankValue);
+
+             if (isPromotionAcrossThreshold && !this.state.selectedPerson.hasPassedUBT) {
+                 const ubtName = this.state.ubtSettings.NAME || 'Training';
+                 const promptTemplate = this.state.ubtSettings.PROMPT_MESSAGE || 'This promotion requires the member to be {name} passed. Is this correct?';
+                 const dynamicMessage = promptTemplate.replace('{name}', ubtName);
+                 const dynamicButtonText = `Yes, ${ubtName} Passed`;
+                 const ubtConfirmed = await this.showConfirmation(dynamicMessage, dynamicButtonText, "Cancel");
+                 if (!ubtConfirmed) {
+                     this.setUiLock(false);
+                     return;
+                 }
+                 ubtApproved = true;
+             }
+         }
+
+         if (confirmationMessages.length > 0) {
+             let finalMessage = "Please confirm the following:\n\n- " + confirmationMessages.join("\n- ");
+             finalMessage += "\n\nDo you still want to proceed?";
+             const confirmed = await this.showConfirmation(finalMessage, "Yes, Proceed Anyway", "Cancel");
+             if (!confirmed) {
+                 this.setUiLock(false);
+                 return;
+             }
+         }
+
+         let finalRankTitle = this.state.selectedRankTitle;
+
+         if (!finalRankTitle) {
+             const availability = this.state.availabilityMap[newLocation];
+             const titledSlots = availability?._titledSlots?.[newRank.toUpperCase()];
+             if (titledSlots) {
+                const isCurrentPersonsSlot = newLocation === this.state.selectedPerson.locationPath && newRank === this.state.selectedPerson.rank;
+                const availableTitles = Object.keys(titledSlots).filter(title => {
+                    let count = titledSlots[title] || 0;
+                    if (isCurrentPersonsSlot && title === this.state.selectedPerson.rankKey) {
+                        count++;
+                    }
+                    return count > 0;
+                });
+
+                if (availableTitles.length > 1 || (availableTitles.length === 1 && availableTitles.includes(this.state.selectedPerson.rankKey) && isCurrentPersonsSlot)) {
+                    const choice = await this.promptForChoice(
+                        `Choose ${newRank} Role`,
+                        'Multiple roles are available for this rank and section. Please select one to continue:',
+                        availableTitles,
+                        {
+                          currentRole: this.state.selectedPerson.rankKey,
+                          currentLocation: this.state.selectedPerson.locationPath,
+                          destinationLocation: newLocation
+                        }
+                    );
+                     if (!choice) {
+                         this.setUiLock(false);
+                         return;
+                     }
+                     finalRankTitle = choice;
+                 }
+             }
+         }
+
+         this.elements.submitButton.textContent = 'Processing...';
+         google.script.run
+          .withSuccessHandler(this.onSubmitSuccess.bind(this))
+          .withFailureHandler(this.onFailure.bind(this))
+          .Dike_Iudicat(
+              this.state.selectedPersonIdentifier,
+              newRank,
+              newLocation,
+              ubtApproved,
+              emailForUpdate,
+              finalRankTitle
+          );
+       },
+      confirmAndDelete: async function() {
+          if (!this.state.selectedPersonIdentifier || this.state.isProcessingAction) return;
+
+          this.setUiLock(true, 'Deleting...');
+          this.state.lastInteractedIdentifier = this.state.selectedPersonIdentifier;
+
+          const joinDate = this._parseDate(this.state.selectedPerson.joinDate);
+           const sevenDaysAgo = new Date();
+           sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+           if (joinDate > sevenDaysAgo) {
+             const warningConfirmed = await this.showConfirmation(
+               `WARNING: ${this.state.selectedPerson.player} joined within the last 7 days. This action is usually not permitted.\n\nDo you still want to proceed?`,
+               "Yes, Continue",
+               "Cancel"
+             );
+             if (!warningConfirmed) {
+                 this.setUiLock(false);
+                 if (this.state.selectedPerson) {
+                     this._loadPersonIntoEditor(this.state.selectedPerson);
+                 }
+                 return;
+             }
+           }
+
+           let confirmationMessage = `Are you sure you want to permanently delete ${this.state.selectedPerson.player}? This action cannot be undone.`;
+
+           if (this.state.selectedPerson.onLOA && this.state.selectedPerson.loaData) {
+               const { startDate, endDate, reason } = this.state.selectedPerson.loaData;
+               const loaDetails = `WARNING: This member is currently on an active Leave of Absence.\n\nStart Date: ${startDate}\nEnd Date: ${endDate}\nReason: ${reason || 'Not specified'}`;
+               confirmationMessage = `${loaDetails}\n\n${confirmationMessage}`;
+           }
+
+           const confirmed = await this.showConfirmation(confirmationMessage, "Yes, Delete", "Cancel");
+           if (!confirmed) {
+               this.setUiLock(false);
+               if (this.state.selectedPerson) {
+                   this._loadPersonIntoEditor(this.state.selectedPerson);
+               }
+               return;
+           }
+
+          let revokeAccess = false;
+          const accessConfig = this.state.sheetAccessConfig.ON_DELETE;
+          const personHasEmail = this.state.selectedPerson && this.state.selectedPerson.email;
+
+          if (personHasEmail) {
+              if (accessConfig === 'ALWAYS') {
+                  revokeAccess = true;
+              } else if (accessConfig === 'ASK') {
+                  const confirmedRevoke = await this.showConfirmation(
+                      `Do you want to revoke spreadsheet editor access for ${this.state.selectedPerson.email}?`,
+                      "Yes, Revoke Access",
+                      "No, Skip"
+                  );
+                  if (confirmedRevoke) {
+                      revokeAccess = true;
+                  }
+              }
+          }
+
+          google.script.run
+            .withSuccessHandler(this.onDeleteSuccess.bind(this))
+            .withFailureHandler(this.onFailure.bind(this))
+            .Atropos_Secat(this.state.selectedPersonIdentifier, revokeAccess);
+        },
+onPersonSearchInput: function() {
+          const query = this.elements.personSearchInput.value.trim().toLowerCase();
+          this.clearSearchSuggestions();
+
+          const minLength = this.state.validationRules?.USERNAME?.MIN_LENGTH || 2;
+          if (query.length < minLength) return;
+
+          const seenIdentifiers = new Set();
+          const suggestionElements = [];
+          const directMatches = this.state.companyCache.filter(p => 
+              p.player.toLowerCase().includes(query)
+          );
+
+          directMatches.sort((a, b) => a.player.length - b.player.length || a.player.localeCompare(b.player));
+
+          directMatches.forEach(person => {
+              if (!seenIdentifiers.has(person.sourceIdentifier)) {
+                  const div = document.createElement('div');
+                  div.textContent = `${person.player} (${person.rank})`;
+                  div.addEventListener('click', () => this.selectPersonFromSearch(person));
+                  suggestionElements.push(div);
+                  seenIdentifiers.add(person.sourceIdentifier);
+              }
+          });
+
+          const threshold = Math.min(3, Math.max(1, Math.floor(query.length / 4))); 
+          const fuzzyMatches = [];
+
+          this.state.companyCache.forEach(person => {
+              if (seenIdentifiers.has(person.sourceIdentifier)) return; 
+
+              const distance = levenshtein(query, person.player.toLowerCase());
+              if (distance > 0 && distance <= threshold) {
+                  fuzzyMatches.push({ ...person, distance });
+              }
+          });
+
+          fuzzyMatches.sort((a, b) => a.distance - b.distance); 
+
+          fuzzyMatches.forEach(person => {
+              if (!seenIdentifiers.has(person.sourceIdentifier)) {
+                  const div = document.createElement('div');
+
+                  const nameSpan = document.createElement('span');
+                  nameSpan.textContent = `${person.player} (${person.rank}) `;
+
+                  const fuzzySpan = document.createElement('span');
+                  fuzzySpan.textContent = '(similar match)';
+                  fuzzySpan.style.fontStyle = 'italic';
+                  fuzzySpan.style.color = '#666';
+
+                  div.appendChild(nameSpan);
+                  div.appendChild(fuzzySpan);
+                  div.addEventListener('click', () => this.selectPersonFromSearch(person));
+                  suggestionElements.push(div);
+                  seenIdentifiers.add(person.sourceIdentifier);
+              }
+          });
+
+          if (suggestionElements.length > 0) {
+              const suggestionsContainer = this.elements.personAutocompleteSuggestions;
+              suggestionElements.slice(0, 10).forEach(el => suggestionsContainer.appendChild(el));
+              suggestionsContainer.children[0]?.classList.add('selected');
+              suggestionsContainer.classList.remove('hidden');
+          }
+        },
+        onPersonSearchKeyDown: function(event) {
+          const suggestionsEl = this.elements.personAutocompleteSuggestions;
+          const suggestions = suggestionsEl.children;
+          const selected = suggestionsEl.querySelector('.selected');
+          const inputEl = this.elements.personSearchInput;
+
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            if (suggestions.length === 0) return;
+            event.preventDefault();
+            let next;
+            if (selected) {
+              selected.classList.remove('selected');
+              next = (event.key === 'ArrowDown') ? selected.nextElementSibling : selected.previousElementSibling;
+            }
+            if (!next) {
+              next = (event.key === 'ArrowDown') ? suggestions[0] : suggestions[suggestions.length - 1];
+            }
+            next.classList.add('selected');
+
+          } else if (event.key === 'Enter') {
+            event.preventDefault();
+            const query = inputEl.value.trim();
+
+            if (selected) {
+                selected.click();
+                return;
+            }
+
+            if (query.length > 0 && this._validateUsernameInput(inputEl)) {
+                const exactMatch = this.state.companyCache.find(p => p.player.toLowerCase() === query.toLowerCase());
+                if (exactMatch) {
+                    this.selectPersonFromSearch(exactMatch);
+                    return;
+                }
+            }
+
+            if (suggestions.length > 0) {
+                suggestions[0].click();
+            }
+          }
+        },
+        _validateUsernameInput: function(inputEl) {
+            const value = inputEl.value.trim();
+            if (!value) return false;
+
+            const rules = this.state.validationRules.USERNAME;
+            if (!rules) return true;
+
+            if (rules.MIN_LENGTH && value.length < rules.MIN_LENGTH) {
+                return false;
+            } else if (rules.MAX_LENGTH && value.length > rules.MAX_LENGTH) {
+                return false;
+            } else if (rules.REGEX && !new RegExp(rules.REGEX).test(value)) {
+                return false;
+            }
+
+            return true;
+        },
+        selectPersonFromSearch: function(person) {
+          this.elements.personSearchInput.value = '';
+          this.state.inputMasks.get('person-search-input')?.updateValue();
+          this.clearSearchSuggestions();
+          this.createSelectedPersonChip(person);
+          this._loadPersonIntoEditor(person);
+          this.elements.rankSelector.focus();
+        },
+        clearSearchSuggestions: function() {
+          this.elements.personAutocompleteSuggestions.innerHTML = '';
+          this.elements.personAutocompleteSuggestions.classList.add('hidden');
+        },
+        createSelectedPersonChip: function(person) {
+          this.removeSelectedPersonChip();
+          const chip = document.createElement('div');
+          chip.className = 'attendee-chip';
+          chip.innerHTML = `<span>${person.player}</span><span class="remove-btn">&times;</span>`;
+          chip.querySelector('.remove-btn').onclick = () => this.removeSelectedPersonChip();
+          this.elements.selectedPersonChipContainer.insertBefore(chip, this.elements.selectedPersonChipContainer.firstElementChild);
+        },
+        removeSelectedPersonChip: function() {
+          const chip = this.elements.selectedPersonChipContainer.querySelector('.attendee-chip');
+          if (chip) chip.remove();
+          this.resetPersonSelection();
+            this.setUiLock(false); 
+        },
+onSubmitSuccess: function(result) {
+
+    if (result.status === "SUCCESS") {
+        this.showConfirmation(result.message, "OK", null);
+
+        if (result.deltaPayload) {
+            this.applyDelta(result.deltaPayload);
+        }
+
+        if (!this.state.isSearchMode) {
+            const currentSection = this.elements.sectionSelector.value;
+            this.onSectionSelect();
+            this.elements.sectionSelector.value = currentSection;
+        }
+        this.resetPersonSelection();
+        if (this.state.isSearchMode) {
+            this.removeSelectedPersonChip();
+        }
+
+        if (result.postActionVerificationToken) {
+            google.script.run.Iustitia_Confirmat_Actum(result.postActionVerificationToken);
+        }
+        if (result.webhookPayload) {
+
+        }
+
+    } else {
+        this.onFailure({ message: result.message });
+        return;
+    }
+
+    this.setUiLock(false);
+},
+onDeleteSuccess: function(result) {
+       if (result.status === "SUCCESS") {
+           this.showConfirmation(result.message, "OK", null);
+
+           if (result.deltaPayload) {
+               this.applyDelta(result.deltaPayload);
+           }
+
+           const currentSection = this.elements.sectionSelector.value;
+           this.resetPersonView();
+           this.selectSection(currentSection);
+
+           if (result.postActionVerificationToken) {
+               google.script.run.Libitina_Confirmat_Exitium(result.postActionVerificationToken);
+           }
+           if (result.webhookPayload) {
+
+           }
+
+       } else {
+           this.onFailure({ message: result.message });
+           return;
+       }
+
+       this.setUiLock(false);
+   },
+refreshData: function() {
+
+            this.showSpinner("Initializing THEMIS..."); 
+            this.resetPersonView(); 
+
+            google.script.run
+              .withSuccessHandler((data) => {
+
+                  this.state.companyCache = data.companymen || [];
+                  this.state.structureData = data.structure || {};
+                  this.state.availabilityMap = data.availabilityMap || {};
+
+                  if (!this.state.isSearchMode) {
+                      this._populateSectionSelector();
+
+                  }
+
+                  this.hideSpinner();
+                  this.resetPersonSelection(); 
+              })
+              .withFailureHandler(this.onFailure.bind(this))
+              .Apollo_Illuminat_Concilium();
+          },
+        _refreshLocalData: function(callback) {
+             const currentPersonIdentifier = this.state.selectedPersonIdentifier;
+             const currentSection = this.elements.sectionSelector.value;
+
+             google.script.run.withSuccessHandler((newData) => {
+                 this.state.companyCache = newData.companymen || [];
+                 this.state.availabilityMap = newData.availabilityMap || {};
+
+                 this._setFormInteractionEnabled(true);
+                 this._checkCanSubmit();
+
+                if (!this.state.isSearchMode && currentSection) {
+                    this.onSectionSelect();
+                    this.elements.personSelector.value = currentPersonIdentifier;
+                }
+
+                if (currentPersonIdentifier) {
+                    const updatedPerson = this.state.companyCache.find(p => p.sourceIdentifier === currentPersonIdentifier);
+                    if (updatedPerson) {
+                        this.state.selectedPerson = updatedPerson;
+                        this._loadPersonIntoEditor(updatedPerson);
+                    }
+                }
+
+                if (callback) callback();
+
+            }).withFailureHandler((error) => {
+                this.onFailure(error);
+
+                this._setFormInteractionEnabled(true);
+                this._checkCanSubmit();
+            }).Apollo_Illuminat_Concilium();
+        },
+        _closeLoaDialogAndRestoreState: function() {
+            this.elements.loaDialogContainer.style.display = 'none';
+            this._setFormInteractionEnabled(true);
+            this._checkCanSubmit();
+        },
+        showSpinner: function(message = 'Processing...') {
+            if (this.elements.spinnerMessage) this.elements.spinnerMessage.textContent = message;
+            this.elements.spinner.style.display = 'flex';
+        },
+        hideSpinner: function() {
+            this.elements.spinner.style.display = 'none';
+        },
+        onFailure: function(error) {
+          this.setUiLock(false);
+
+          const errorMessage = error.message || "An unknown error occurred.";
+          if (errorMessage.startsWith("Data mismatch detected")) {
+
+              this.handleStaleDataError(errorMessage);
+          } else {
+
+              this.showConfirmation("Error: " + errorMessage, "OK", null);
+          }
+
+       },
+
+        handleStaleDataError: function(message) {
+
+            const userAck = this.showConfirmation(
+                message,
+                "OK, Refreshing...",
+                null
+            );
+
+            this.refreshData(); 
+
+            userAck.then(() => {
+
+            });
+        },
+        manageLoa: function() {
+          if (!this.state.selectedPersonIdentifier) return;
+          const person = this.state.selectedPerson;
+
+          this._setFormInteractionEnabled(false);
+
+         this.state.originalLoaData = null;
+          this.elements.loaCancelButton.disabled = false;
+
+          const checkForLoaChanges = () => {
+              if (!this.state.originalLoaData) return;
+
+              const startDateObj = this.loaPicker.getStartDate();
+              const endDateObj = this.loaPicker.getEndDate();
+              if (!startDateObj || !endDateObj) return;
+
+              const newStartDate = startDateObj.toJSDate().toISOString().split('T')[0];
+              const newEndDate = endDateObj.toJSDate().toISOString().split('T')[0];
+              const newReason = this.elements.loaReason.value.trim();
+
+              const hasChanged = newStartDate !== this.state.originalLoaData.startDate ||
+                                 newEndDate !== this.state.originalLoaData.endDate ||
+                                 newReason !== this.state.originalLoaData.reason;
+
+              this.elements.loaConfirmButton.disabled = !hasChanged;
+          };
+
+          if (person.onLOA && person.loaData) {
+            this.elements.loaDialogTitle.textContent = `Edit LOA for ${person.player}`;
+            this.state.originalLoaData = {
+                startDate: person.loaData.startDate,
+                endDate: person.loaData.endDate,
+                reason: person.loaData.reason || ''
+            };
+
+            this.elements.loaReason.parentElement.style.display = 'block';
+            document.getElementById('loa-date-range').parentElement.style.display = 'block';
+
+            this.loaPicker.setDateRange(person.loaData.startDate, person.loaData.endDate);
+            this.elements.loaReason.value = person.loaData.reason || '';
+
+            this.elements.loaConfirmButton.textContent = 'Update LOA';
+            this.elements.loaConfirmButton.classList.remove('hidden');
+            this.elements.loaConfirmButton.disabled = true;
+
+            this.elements.loaEndNowButton.classList.remove('hidden');
+            this.elements.loaEndNowButton.disabled = false;
+
+            this.elements.loaReason.oninput = checkForLoaChanges;
+            this.loaPicker.on('selected', checkForLoaChanges);
+
+          } else {
+            this.elements.loaDialogTitle.textContent = `Set LOA for ${person.player}`;
+
+            this.elements.loaReason.parentElement.style.display = 'block';
+            document.getElementById('loa-date-range').parentElement.style.display = 'block';
+            this.elements.loaReason.value = '';
+            this.loaPicker.clearSelection();
+
+            this.elements.loaConfirmButton.textContent = 'Confirm';
+            this.elements.loaConfirmButton.classList.remove('hidden');
+            this.elements.loaConfirmButton.disabled = true;
+
+            this.elements.loaEndNowButton.classList.add('hidden');
+          }
+
+          this.elements.loaDialogContainer.style.display = 'flex';
+        },
+        onLoaConfirm: function() {
+          if (!this.state.selectedPersonIdentifier) return;
+
+          this.setUiLock(true, 'Setting LOA...');
+          this.elements.loaConfirmButton.disabled = true;
+          this.elements.loaEndNowButton.disabled = true;
+          this.elements.loaCancelButton.disabled = true;
+
+          const startDateObj = this.loaPicker.getStartDate();
+          const endDateObj = this.loaPicker.getEndDate();
+          const reason = this.elements.loaReason.value.trim();
+
+          if (!startDateObj || !endDateObj || !reason) {
+            this.showConfirmation("Please fill in all LOA details.", "OK", null);
+            this.elements.loaConfirmButton.disabled = false;
+            this.elements.loaEndNowButton.disabled = false;
+            this.elements.loaCancelButton.disabled = false;
+            return;
+          }
+
+          this.elements.loaConfirmButton.textContent = 'Processing...';
+
+          const startDate = startDateObj.toJSDate();
+          const endDate = endDateObj.toJSDate();
+          const startDateStr = startDate.toISOString().split('T')[0];
+          const endDateStr = endDate.toISOString().split('T')[0];
+
+          google.script.run
+            .withSuccessHandler(this.onLoaSetSuccess.bind(this))
+            .withFailureHandler(this.onLoaFailure.bind(this))
+            .Morpheus_Inducit(this.state.selectedPersonIdentifier, startDateStr, endDateStr, reason);
+        },
+        onLoaCancel: function() {
+            this._closeLoaDialogAndRestoreState();
+        },
+        onLoaEndNow: function() {
+          if (!this.state.selectedPersonIdentifier) return;
+
+          this.setUiLock(true, 'Ending LOA...');
+          this.elements.loaEndNowButton.disabled = true;
+          this.elements.loaConfirmButton.disabled = true;
+          this.elements.loaCancelButton.disabled = true;
+
+          this.elements.loaEndNowButton.textContent = 'Processing...';
+
+          google.script.run
+            .withSuccessHandler(this.onLoaEndSuccess.bind(this))
+            .withFailureHandler(this.onLoaFailure.bind(this))
+            .Morpheus_Excit(this.state.selectedPersonIdentifier);
+        },
+        onLoaSetSuccess: function(result) {
+           this.state.isProcessingAction = false;
+
+           if (result.status === "SUCCESS") {
+               this.showConfirmation(result.message, "OK", null);
+
+               if (result.deltaPayload) {
+                   this.applyDelta(result.deltaPayload);
+               }
+
+               this._closeLoaDialogAndRestoreState();
+
+               if (this.state.selectedPersonIdentifier) {
+                  const updatedPerson = this.state.companyCache.find(p => p.sourceIdentifier === result.deltaPayload.updatedPersons[0].sourceIdentifier);
+                  this._loadPersonIntoEditor(updatedPerson);
+               }
+               this.onSectionSelect();
+
+               if (result.postActionVerificationToken) {
+                   google.script.run.Iustitia_Confirmat_Actum(result.postActionVerificationToken);
+               }
+               if (result.webhookPayload) {
+
+               }
+           } else {
+               this.onLoaFailure({ message: result.message });
+           }
+       },
+        onLoaUpdateSuccess: function(result) {
+          if (result.status === "SUCCESS") {
+            this._refreshLocalData(() => {
+              this._closeLoaDialogAndRestoreState();
+              this.showConfirmation(result.message, "OK", null);
+
+              if (result.logInfo) {
+                  google.script.run.logAndEnqueue(result.logInfo);
+              }
+            });
+          } else {
+            this.onLoaFailure({ message: result.message });
+          }
+        },
+        onLoaEndSuccess: function(result) {
+           this.state.isProcessingAction = false;
+
+           if (result.status === "SUCCESS") {
+               this.showConfirmation(result.message, "OK", null);
+
+               if (result.deltaPayload) {
+                   this.applyDelta(result.deltaPayload);
+               }
+
+               this._closeLoaDialogAndRestoreState();
+
+               if (this.state.selectedPersonIdentifier) {
+                  const updatedPerson = this.state.companyCache.find(p => p.sourceIdentifier === result.deltaPayload.updatedPersons[0].sourceIdentifier);
+                  this._loadPersonIntoEditor(updatedPerson);
+               }
+               this.onSectionSelect();
+
+               if (result.postActionVerificationToken) {
+                   google.script.run.Iustitia_Confirmat_Actum(result.postActionVerificationToken);
+               }
+               if (result.webhookPayload) {
+
+               }
+           } else {
+               this.onLoaFailure({ message: result.message });
+           }
+       },
+        onLoaFailure: function(error) {
+            this._closeLoaDialogAndRestoreState();
+            this.showConfirmation("Error: " + (error.message || "An unknown error occurred."), "OK", null);
+        },
+        onDataRefresh: function(data) {
+          this.state.companyCache = data.companymen || [];
+          this.state.availabilityMap = data.availabilityMap || {};
+          if (this.state.isSearchMode) {
+            this.onPersonSearchInput();
+          }
+          else {
+            this.onSectionSelect();
+          }
+        },
+
+        showEmailError: function(message) {
+          this.elements.emailErrorBox.textContent = message;
+          this.elements.emailErrorBox.style.display = 'block';
+        },
+        showConfirmation: function(message, confirmText = "OK", cancelText = null) {
+          return new Promise((resolve) => {
+            this.elements.genericConfirmationMessage.innerText = message;
+            this.elements.genericConfirmButton.innerText = confirmText;
+            this.elements.genericCancelButton.classList.toggle('hidden', !cancelText);
+            if (cancelText) this.elements.genericCancelButton.innerText = cancelText;
+
+            this.elements.genericConfirmationContainer.style.display = 'flex';
+
+            this.confirmationCallback = (result) => {
+              this.elements.genericConfirmationContainer.style.display = 'none';
+              resolve(result);
+            };
+          });
+        },
+        confirmationCallback: null,
+                showCustomFieldsDialog: function() {
+            if (!this.state.selectedPerson) return;
+            const form = this.elements.customFieldsForm;
+            form.innerHTML = '';
+
+            this.state.customFieldsConfig.forEach(field => {
+                const value = this.state.selectedPerson.customFields[field.key]?.value ?? field.defaultValue ?? '';
+
+                const formGroup = document.createElement('div');
+                formGroup.className = 'form-group';
+                formGroup.style.marginBottom = '10px';
+
+                const label = document.createElement('label');
+                label.htmlFor = `cf-edit-${field.key}`;
+                label.textContent = field.label;
+
+                let input;
+                if (field.type === 'dropdown') {
+                    input = document.createElement('select');
+                    input.id = `cf-edit-${field.key}`;
+                    (field.options || []).forEach(opt => {
+                        input.appendChild(new Option(opt, opt));
+                    });
+                } else {
+                    input = document.createElement('input');
+                    input.id = `cf-edit-${field.key}`;
+                    input.value = value;
+
+                    if (field.type === 'integer') {
+                        this._applyMask(input, {
+                            mask: Number,
+                            min: field.validation?.min ?? -Infinity,
+                            max: field.validation?.max ?? Infinity,
+                            thousandsSeparator: ''
+                        });
+                    } else if (field.validation && field.validation.regex) {
+                        this._applyMask(input, {
+                            mask: new RegExp(field.validation.regex)
+                        });
+                    }
+                }
+                input.dataset.key = field.key;
+                input.style.width = '100%';
+
+                formGroup.appendChild(label);
+                formGroup.appendChild(input);
+                form.appendChild(formGroup);
+            });
+
+            this.elements.customFieldsContainer.style.display = 'flex';
+        },
+
+saveCustomFields: function() {
+    if (!this.state.selectedPersonIdentifier) return;
+
+    const fieldsData = {};
+    this.elements.customFieldsForm.querySelectorAll('input, select').forEach(input => {
+        fieldsData[input.dataset.key] = input.value;
+    });
+
+    this.setUiLock(true, 'Saving Fields...');
+
+    google.script.run
+        .withSuccessHandler(this.onSaveCustomFieldsSuccess.bind(this))
+        .withFailureHandler(this.onFailure.bind(this)) 
+        .Tyche_Mutat_Fortunam(this.state.selectedPersonIdentifier, fieldsData);
+},
+
+onSaveCustomFieldsSuccess: function(result) {
+    this.elements.customFieldsContainer.style.display = 'none';
+
+    if (result.status === "SUCCESS") {
+        this.showConfirmation(result.message, "OK", null);
+        this._updatePersonInCache(result.updatedPerson);
+        this._loadPersonIntoEditor(result.updatedPerson);
+    } else {
+        this.onFailure({ message: result.message });
+        return; 
+    }
+
+    this.setUiLock(false);
+}
+      };
+      window.addEventListener('load', () => App.init());
+    </script>
+  </body>
+</html>

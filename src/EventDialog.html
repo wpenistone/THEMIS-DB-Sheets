@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/imask"></script>
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: "IBM Plex Sans", sans-serif;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+    button,
+    input,
+    select,
+    textarea {
+      font-family: inherit;
+    }
+    form {
+        margin: 0;
+        padding: 0;
+    }
+
+    .outer-container {
+        padding: 0 16px 16px 16px;
+        height: 100%;
+        box-sizing: border-box;
+        overflow-y: auto;
+    }
+
+    .inner-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    fieldset {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 16px;
+        margin: 0;
+    }
+
+    #event-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    legend {
+        font-weight: bold;
+        font-size: 1.2em;
+        padding: 0 5px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 15px;
+    }
+
+    .form-row .form-group {
+        flex: 1;
+    }
+
+    label {
+        font-weight: bold;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+    }
+
+    input[type="text"],
+    select,
+    textarea {
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+    }
+    .placeholder-option {
+        color: #999;
+        font-style: italic;
+        font-weight: normal;
+    }
+
+    input[type="text"]:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #4285f4;
+        box-shadow: 0 0 3px rgba(66, 133, 244, 0.5);
+    }
+    input::placeholder {
+        color: #999;
+        font-style: italic;
+    }
+    select.select-placeholder {
+        color: #999;
+        font-style: italic;
+    }
+    select.select-placeholder option {
+        color: #222;
+        font-style: normal;
+    }
+
+    textarea#event-log-text {
+        height: 120px;
+        resize: vertical;
+    }
+
+    .button-group {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        margin-top: 30px;
+    }
+
+    #choice-buttons-container.button-group > button {
+      margin-left: 0;
+    }
+
+    .button-group button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px; 
+      height: 29px;
+      font-weight: 500;
+      min-width: 80px;
+      border-radius: 4px;
+      box-sizing: border-box; 
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    #spinner-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.9);
+        z-index: 100;
+    }
+
+    .chip-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        border: 1px solid #ccc;
+        padding: 5px;
+        border-radius: 4px;
+        align-items: center;
+        min-height: 38px;
+    }
+
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        background-color: #e0e0e0;
+        padding: 4px 8px;
+        border-radius: 15px;
+        margin: 2px;
+        white-space: nowrap;
+        font-size: 0.9em;
+        color: #222; 
+    }
+
+    .chip .remove-btn {
+        margin-left: 8px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .chip.unrecognized {
+        background-color: #f8d7da;
+    }
+    .chip.warning {
+        background-color: #fff3cd;
+    }
+    .autocomplete-container {
+        position: relative;
+        flex-grow: 1;
+    }
+
+    .autocomplete-input {
+        border: none;
+        outline: none;
+        width: 100%;
+        background: transparent;
+        padding: 2px;
+    }
+
+    .autocomplete-suggestions {
+        position: absolute;
+        border: 1px solid #ccc;
+        background-color: white;
+        width: 100%;
+        max-height: 150px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .autocomplete-suggestions div {
+        padding: 8px;
+        cursor: pointer;
+    }
+
+    .autocomplete-suggestions div:hover,
+    .autocomplete-suggestions .selected {
+        background-color: #f0f0f0;
+    }
+
+    .info-icon {
+        color: #c0392b;
+        font-weight: bold;
+        cursor: help;
+        margin-left: 8px;
+        font-family: sans-serif;
+    }
+
+    .suggestion {
+        color: #007bff;
+        cursor: pointer;
+        font-style: italic;
+        margin-left: 5px;
+    }
+    .suggestion:hover {
+        text-decoration: underline;
+    }
+    .warning-text {
+        font-style: italic;
+        margin-left: 5px;
+    }
+    .info-icon.warning {
+        color: #f39c12;
+        cursor: default;
+    }
+    select.select-placeholder {
+        color: #999;
+        font-style: italic;
+    }
+
+    #section-custom-container {
+      position: relative;
+      width: 100%;
+    }
+
+    #section-custom-toggle {
+        font-family: inherit;
+        color: #222;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px 25px 8px 8px;
+        cursor: pointer;
+        text-align: center;
+        position: relative;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+    #section-custom-toggle.placeholder {
+      color: #999;
+      font-style: italic;
+    }
+
+    #section-custom-toggle::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid #555;
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    #section-custom-toggle:focus {
+      outline: none;
+      outline-offset: 2px;
+      border-color: #4285f4;
+      box-shadow: 0 0 3px rgba(66, 133, 244, 0.5);
+    }
+    select:focus, textarea:focus, button:focus {
+
+        outline-offset: 2px;
+        border-color: #4285f4;
+        box-shadow: 0 0 3px rgba(66, 133, 244, 0.5)
+    }
+
+    #section-custom-options {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-top: none;
+      z-index: 1001;
+      max-height: 250px;
+      overflow-y: auto;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #section-custom-list,
+    #section-custom-list ul {
+      list-style: none; padding: 0; margin: 0; position: relative;
+    }
+    #section-custom-list ul {
+      padding-left: 20px; background-color: #fff;
+    }
+    #section-custom-list li {
+      padding: 8px 12px 8px 30px; cursor: pointer; position: relative; white-space: nowrap;
+    }
+    #section-custom-list li:hover > span,
+    #section-custom-list li.focused > span {
+      background-color: #f1f1f1;
+    }
+    #section-custom-list li > span {
+      position: relative; z-index: 1; display: inline-block; padding: 2px 4px; border-radius: 2px; color: #222;
+    }
+    #section-custom-list > li.top-level-item {
+      font-weight: 500; padding-left: 12px;
+    }
+
+    #section-custom-list li:not(.top-level-item)::before,
+    #section-custom-list li:not(.top-level-item)::after {
+      content: ''; position: absolute; background-color: #dcdcdc; z-index: 0;
+    }
+    #section-custom-list li:not(.top-level-item)::before {
+      top: 0; left: 10px; width: 1px; height: 100%;
+    }
+    #section-custom-list li:not(.top-level-item)::after {
+      top: 18px; left: 11px; width: 19px; height: 1px;
+    }
+    #section-custom-list li:last-child::before {
+      height: 18px;
+    }
+    #section-custom-list > li.top-level-item::before,
+    #section-custom-list > li.top-level-item::after {
+      display: none;
+    }
+
+    .sr-only {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+    }
+
+    #aria-live-region {
+        position: absolute;
+        left: -10000px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+    }
+
+    .confirmation-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.85);
+      z-index: 100;
+    }
+    .confirmation-dialog {
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .confirmation-dialog p {
+      margin-bottom: 20px;
+    }
+
+    #choice-prompt-container {
+        z-index: 102;
+    }
+    #choice-buttons-container {
+        display: flex;
+        flex-direction: column;
+        margin-top: 15px;
+        align-items: stretch;
+    }
+</style>
+</head>
+<body role="dialog" aria-labelledby="event-dialog-title">
+
+    <div id="spinner-container">
+        <p id="spinner-message">Initializing THEMIS...</p>
+    </div>
+
+    <div id="generic-confirmation-container" class="confirmation-container" role="alertdialog" aria-modal="true">
+      <div class="confirmation-dialog">
+        <p id="generic-confirmation-message"></p>
+        <div class="button-group">
+          <button class="action" id="generic-confirm-button">OK</button>
+          <button id="generic-cancel-button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="choice-prompt-container" class="confirmation-container" style="z-index: 102" role="dialog" aria-labelledby="choice-prompt-title" aria-modal="true">
+      <div class="confirmation-dialog">
+        <h3 id="choice-prompt-title">Choose a Section</h3>
+        <p id="choice-prompt-message"></p>
+        <div id="choice-buttons-container" class="button-group" style="flex-direction: column; margin-top: 15px; align-items: stretch;">
+        </div>
+        <div class="button-group" style="margin-top: 20px;">
+           <button type="button" id="choice-cancel-button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="aria-live-region" aria-live="polite" aria-atomic="true"></div>
+
+    <main class="outer-container" id="main-container" style="display: none;">
+        <form id="event-form">
+            <fieldset>
+                <legend id="event-dialog-title">Event Information</legend>
+                <div class="inner-container">
+                    <div class="form-group">
+                        <label for="event-log-text">Event Log (Paste Here)</label>
+                        <textarea id="event-log-text" aria-describedby="event-log-help"></textarea>
+                        <div id="event-log-help" class="hidden">Paste or type your event log text here.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="event-type">Event Type<span id="event-type-info-icon" class="info-icon hidden" title="">ⓘ</span></label>
+                        <select id="event-type" aria-required="true"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="section">Section<span id="section-info-icon" class="info-icon hidden" title="">ⓘ</span></label>
+
+                        <select id="section" style="display: none;" aria-required="true"></select>
+
+                        <div id="section-custom-container">
+                            <button type="button" id="section-custom-toggle" class="placeholder"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    aria-label="Select section"
+                                    aria-describedby="section-dropdown-help"
+                                    role="combobox">
+                                [ Select Section ]
+                            </button>
+                            <div id="section-custom-options" role="listbox" style="display: none;" aria-label="Available sections">
+                                <ul id="section-custom-list" role="presentation"></ul>
+                            </div>
+                            <div id="section-dropdown-help" class="sr-only">
+                                Use arrow keys to navigate options, Enter to select, Escape to close
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="day">Day<span id="day-info-icon" class="info-icon warning hidden" title="">ⓘ</span></label>
+                        <select id="day" aria-required="true"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description (Optional)</label>
+                        <textarea id="description" rows="2" style="resize: vertical; height: 40px;" autocomplete="off"></textarea>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Participants</legend>
+                <div class="inner-container">
+                    <div class="form-group">
+                        <label>Host<span id="host-info-icon" class="info-icon hidden" title="">ⓘ</span></label>
+                        <div id="host-container" class="chip-container" role="combobox">
+                            <div class="autocomplete-container">
+                                <input type="text" id="host-input" class="autocomplete-input" autocomplete="off" placeholder="Add host...">
+                                <div id="host-autocomplete-suggestions" class="autocomplete-suggestions hidden" role="listbox"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Attendees<span id="attendees-info-icon" class="info-icon hidden" title="">ⓘ</span></label>
+                        <div id="attendees-container" class="chip-container" role="combobox">
+                            <div class="autocomplete-container">
+                                <input type="text" id="attendee-input" class="autocomplete-input" autocomplete="off" placeholder="Add attendee...">
+                                <div id="attendee-autocomplete-suggestions" class="autocomplete-suggestions hidden" role="listbox"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="button-group">
+                <button type="submit" class="action" id="submit-button">Log Event</button>
+            </div>
+        </form>
+    </main>
+        <script>
+        function debounce(func, delay) {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+        function levenshtein(a, b) {
+            if (a.length === 0) return b.length;
+            if (b.length === 0) return a.length;
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
+            for (let j = 0; j <= a.length; j++) { matrix[0][j] = j; }
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        function announceToScreenReader(message) {
+            const liveRegion = document.getElementById('aria-live-region');
+            if (liveRegion) {
+                liveRegion.textContent = message;
+                setTimeout(() => {
+                    liveRegion.textContent = '';
+                }, 1000);
+            }
+        }
+
+        const App = {
+            state: {
+                userData: undefined,
+                allCompanymen: [],
+                companymenNames: new Map(),
+                discordIdToNameMap: new Map(),
+                ncos: [],
+                structureData: {},
+                hierarchy: [],
+                pathToShortcutMap: null,
+                isUpdatingFromFields: false,
+                suggestionIndex: -1,
+                hostSuggestionIndex: -1,
+                confirmationCallback: null,
+                choiceResolver: null,
+                eventTypeDefinitions: [],
+                focusedOptionIndex: -1,
+                inputMasks: new Map(),
+                validationRules: {},
+                dateFormat: "MM/DD/YY",
+                savedScrollTop: 0,
+              },
+            elements: {},
+            _getCurrentFormData: function() {
+                return {
+                    eventType: this.elements.eventTypeSelect.value,
+                    section: this.elements.sectionSelect.value,
+                    day: this.elements.daySelect.value,
+                    host: this.elements.hostContainer.querySelector('.chip')?.dataset.name || null,
+                    description: this.elements.description.value,
+                    attendees: Array.from(this.elements.attendeesContainer.querySelectorAll('.chip')).map(c => c.dataset.name)
+                };
+            }, 
+
+            _lockScroll: function() {
+                const mainContainer = this.elements.mainContainer;
+                this.state.savedScrollTop = mainContainer.scrollTop;
+                mainContainer.style.height = mainContainer.scrollHeight + 'px';
+                mainContainer.style.overflowY = 'hidden'; 
+            },
+            _unlockScroll: function() {
+                const mainContainer = this.elements.mainContainer;
+                mainContainer.style.height = '';
+                mainContainer.style.overflowY = 'auto';
+                mainContainer.scrollTop = this.state.savedScrollTop;
+            },
+
+            init: function() {
+                this._cacheDOMElements();
+
+                google.script.run
+                    .withSuccessHandler(this._onInitialData.bind(this))
+                    .withFailureHandler(this.Alecto_Clamat.bind(this))
+                    .Apollo_Illuminat_Eventum();
+
+            },
+            setUiLock: function(isLocked, message = 'Processing...') {
+    this.state.isProcessingAction = isLocked;
+
+    if (isLocked) {
+        this.elements.spinnerMessage.textContent = message;
+        this.elements.spinner.style.display = 'flex';
+    } else {
+        this.elements.spinner.style.display = 'none';
+    }
+
+    this.elements.eventLogText.disabled = isLocked;
+    this.elements.eventTypeSelect.disabled = isLocked;
+    this.elements.sectionCustomToggle.disabled = isLocked;
+    this.elements.daySelect.disabled = isLocked;
+    this.elements.description.disabled = isLocked;
+    this.elements.hostInput.disabled = isLocked;
+    this.elements.attendeeInput.disabled = isLocked;
+    this.elements.submitButton.disabled = isLocked;
+
+    if (!isLocked) {
+        this.validateForm(); 
+    }
+},
+
+            _checkAndFinalizeSetup: function() {
+                if (this.state.allCompanymen.length === 0) {
+                    return;
+                }
+
+    if (this.state.userData && this.state.userData.locationPath) {
+        this._sortHierarchyForUserDisplay(this.state.structureData.hierarchy, this.state.userData.locationPath);
+    }
+
+    this._populateSelects(this.state);
+    this._addEventListeners(this.state.structureData);
+
+    this.elements.spinner.style.display = 'none';
+    this.elements.mainContainer.style.display = 'block';
+
+    this.updateLogText();
+    this.validateForm();
+},
+
+            _ensureElementIsVisible: function(container, element) {
+              setTimeout(() => {
+                if (!element || element.classList.contains('hidden')) return;
+                const containerRect = container.getBoundingClientRect();
+                const elementRect = element.getBoundingClientRect();
+
+                if (elementRect.bottom > containerRect.bottom) {
+                  const scrollAmount = elementRect.bottom - containerRect.bottom;
+                  container.scrollBy({
+                    top: scrollAmount + 5,
+                    behavior: 'smooth'
+                  });
+                }
+              }, 0);
+            },
+            _cacheDOMElements: function() {
+                const get = id => document.getElementById(id);
+                this.elements = {
+                    spinner: get('spinner-container'),
+                    spinnerMessage: get('spinner-message'),
+                    mainContainer: get('main-container'),
+                    eventForm: get('event-form'),
+                    submitButton: get('submit-button'),
+                    eventLogText: get('event-log-text'),
+                    eventTypeSelect: get('event-type'),
+                    eventTypeInfoIcon: get('event-type-info-icon'),
+                    sectionSelect: get('section'),
+                    daySelect: get('day'),
+                    hostContainer: get('host-container'),
+                    hostInput: get('host-input'),
+                    hostSuggestions: get('host-autocomplete-suggestions'),
+                    attendeesContainer: get('attendees-container'),
+                    description: get('description'),
+                    attendeeInput: get('attendee-input'),
+                    attendeeSuggestions: get('attendee-autocomplete-suggestions'),
+                    sectionInfoIcon: get('section-info-icon'),
+                    dayInfoIcon: get('day-info-icon'),
+                    hostInfoIcon: get('host-info-icon'),
+                    attendeesInfoIcon: get('attendees-info-icon'),
+
+                    sectionCustomToggle: get('section-custom-toggle'),
+                    sectionCustomOptions: get('section-custom-options'),
+                    sectionCustomList: get('section-custom-list'),
+                    confirmationContainer: get('generic-confirmation-container'), confirmButton: get('generic-confirm-button'),
+                    cancelButton: get('generic-cancel-button'), confirmationMessage: get('generic-confirmation-message'),
+
+                    choicePromptContainer: get('choice-prompt-container'),
+                    choicePromptTitle: get('choice-prompt-title'),
+                    choicePromptMessage: get('choice-prompt-message'),
+                    choiceButtonsContainer: get('choice-buttons-container'),
+                    choiceCancelButton: get('choice-cancel-button'),
+                  };
+            },
+            _onInitialData: function(data) {
+                this.state.allCompanymen = data.allCompanymen || [];
+                this.state.ncos = data.ncos || [];
+                this.state.structureData = data.structure || {};
+                this.state.structureData.hierarchy = data.hierarchy;
+                this.state.hierarchy = data.hierarchy || [];
+                this.state.rankHierarchy = data.rankHierarchy || [];
+                this.state.minHostRank = data.minHostRank || 'CPL';
+                this.state.eventTypeDefinitions = data.eventTypeDefinitions || [];
+                this.state.eventTypes = data.eventTypes || [];
+                this.state.validationRules = data.validationRules || {};
+                this.state.dateFormat = data.dateFormat || "MM/DD/YY";
+                this.state.userData = data.userData || null; 
+
+                (this.state.allCompanymen || []).forEach(person => {
+                    this.state.companymenNames.set(person.player.toLowerCase(), person.player);
+                    if (person.discordId) {
+                        const numericId = person.discordId.replace(/\D/g, '');
+                        if (numericId) {
+                            this.state.discordIdToNameMap.set(numericId, person.player);
+                        }
+                    }
+                });
+
+                this._checkAndFinalizeSetup();
+            },
+
+            _findBestEventTypeMatch: function(text) {
+                if (!text || !text.trim()) return null;
+
+                const definitions = this.state.eventTypeDefinitions;
+                const lowerInput = text.toLowerCase().trim();
+
+                for (const def of definitions) {
+                    const keywords = [def.name.toLowerCase(), ...def.aliases.map(a => a.toLowerCase())];
+                    for (const keyword of keywords) {
+                        if (lowerInput.includes(keyword) || keyword.includes(lowerInput)) {
+                            return def.name;
+                        }
+                    }
+                }
+
+                let bestMatch = null;
+                let minDistance = Math.max(1, Math.floor(lowerInput.length / 4));
+
+                for (const def of definitions) {
+                    let distance = levenshtein(lowerInput, def.name.toLowerCase());
+                    if (distance <= minDistance) {
+                        minDistance = distance;
+                        bestMatch = def.name;
+                    }
+                    for (const alias of def.aliases) {
+                        distance = levenshtein(lowerInput, alias.toLowerCase());
+                        if (distance <= minDistance) {
+                            minDistance = distance;
+                            bestMatch = def.name;
+                        }
+                    }
+                }
+
+                return bestMatch || text;
+            },
+
+            _sortHierarchyForUserDisplay: function(nodes, userPath, currentFullPath = '') {
+                if (!nodes || nodes.length === 0) {
+                    return;
+                }
+
+                nodes.sort((a, b) => {
+                    const aFullPath = currentFullPath ? `${currentFullPath}>${a.name}` : a.name;
+                    const bFullPath = currentFullPath ? `${currentFullPath}>${b.name}` : b.name;
+
+                    const aIsInUserPath = userPath.startsWith(aFullPath);
+                    const bIsInUserPath = userPath.startsWith(bFullPath);
+
+                    if (aIsInUserPath && !bIsInUserPath) return -1;
+                    if (!bIsInUserPath && aIsInUserPath) return 1;
+
+                    return a.name.localeCompare(b.name);
+                });
+
+                nodes.forEach(node => {
+                    const nodeFullPath = currentFullPath ? `${currentFullPath}>${node.name}` : node.name;
+                    if (node.children) {
+                        this._sortHierarchyForUserDisplay(node.children, userPath, nodeFullPath);
+                    }
+                });
+            },
+
+            openCustomSelect: function() {
+                this.elements.sectionCustomOptions.style.display = 'block';
+                this.elements.sectionCustomToggle.setAttribute('aria-expanded', 'true');
+                this.state.focusedOptionIndex = -1;
+                announceToScreenReader('Section dropdown opened');
+                this._ensureElementIsVisible(this.elements.mainContainer, this.elements.sectionCustomOptions);
+            },
+            closeCustomSelect: function() {
+                this.elements.sectionCustomOptions.style.display = 'none';
+                this.elements.sectionCustomToggle.setAttribute('aria-expanded', 'false');
+                this.elements.sectionCustomToggle.removeAttribute('aria-activedescendant');
+                const focused = this.elements.sectionCustomList.querySelector('.focused');
+                if (focused) focused.classList.remove('focused');
+                this.state.focusedOptionIndex = -1;
+                announceToScreenReader('Section dropdown closed');
+            },
+            selectSection: function(value, text) {
+                if (!value.includes('>')) {
+                    const option = Array.from(this.elements.sectionSelect.options).find(o => o.text === value);
+                    if (option) {
+                        value = option.value;
+                        text = option.text;
+                    }
+                } else {
+                    text = value.split('>').pop();
+                }
+                this.elements.sectionCustomToggle.textContent = text;
+                this.elements.sectionCustomToggle.classList.remove('placeholder');
+                this.elements.sectionSelect.value = value;
+                this.closeCustomSelect();
+                this.elements.sectionSelect.dispatchEvent(new Event('change'));
+                announceToScreenReader(`Selected section: ${text}`);
+            },
+            _addEventListeners: function(data) {
+                const debouncedTextChange = debounce(this.onTextChange.bind(this), 500);
+                this.elements.eventLogText.addEventListener('input', debouncedTextChange);
+
+                this.elements.eventLogText.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text');
+                    const start = this.elements.eventLogText.selectionStart;
+                    const end = this.elements.eventLogText.selectionEnd;
+                    this.elements.eventLogText.value = this.elements.eventLogText.value.substring(0, start) + text + this.elements.eventLogText.value.substring(end);
+                    this.elements.eventLogText.selectionStart = this.elements.eventLogText.selectionEnd = start + text.length;
+                    this.elements.eventLogText.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+
+                this.elements.sectionSelect.addEventListener('change', () => {
+                    const selectedOption = this.elements.sectionSelect.options[this.elements.sectionSelect.selectedIndex];
+                    if (selectedOption && selectedOption.value) {
+                        this.elements.sectionCustomToggle.textContent = selectedOption.text;
+                        this.elements.sectionCustomToggle.classList.remove('placeholder');
+                    } else {
+                        this.elements.sectionCustomToggle.textContent = '[ Select Section ]';
+                        this.elements.sectionCustomToggle.classList.add('placeholder');
+                    }
+                    this.updateLogText();
+                });
+                this.elements.eventTypeSelect.addEventListener('change', () => {
+                    this.elements.eventTypeSelect.classList.toggle('select-placeholder', !this.elements.eventTypeSelect.value);
+                    this.updateLogText();
+                });
+                this.elements.daySelect.addEventListener('change', this.updateLogText.bind(this));
+                this.elements.description.addEventListener('input', this.updateLogText.bind(this));
+
+                this.elements.sectionCustomToggle.addEventListener('click', () => {
+                    const isOpen = this.elements.sectionCustomOptions.style.display === 'block';
+                    if (isOpen) this.closeCustomSelect();
+                    else this.openCustomSelect();
+                });
+
+                this.elements.eventTypeSelect.addEventListener('wheel', this._cycleSelectOptionOnWheel.bind(this), { passive: false });
+                this.elements.daySelect.addEventListener('wheel', this._cycleSelectOptionOnWheel.bind(this), { passive: false });
+                this.elements.sectionCustomToggle.addEventListener('wheel', (e) => {
+                    if (this.elements.sectionCustomOptions.style.display === 'block') {
+                      return;
+                    }
+                    e.preventDefault();
+                    this._cycleSelect(this.elements.sectionSelect, e.deltaY > 0 ? 1 : -1);
+                }, { passive: false });
+
+                this.elements.sectionCustomList.addEventListener('click', (e) => {
+                    const li = e.target.closest('li');
+                    if (!li) return;
+
+                    if (li.dataset.value) {
+                        this.selectSection(li.dataset.value, li.querySelector('span').textContent);
+                    }
+                });
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#section-custom-container')) {
+                        this.closeCustomSelect();
+                    }
+                });
+
+                this.elements.sectionCustomToggle.addEventListener('keydown', (e) => {
+                    switch(e.key) {
+                        case 'ArrowDown':
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            if (this.elements.sectionCustomOptions.style.display !== 'block') {
+                                this.openCustomSelect();
+                            }
+                            this.navigateOptions(e.key === 'ArrowDown' ? 1 : -1);
+                            break;
+                        case 'Enter':
+                        case ' ':
+                            e.preventDefault();
+                            const isOpen = this.elements.sectionCustomOptions.style.display === 'block';
+                            if (isOpen) this.closeCustomSelect();
+                            else this.openCustomSelect();
+                            break;
+                        case 'Escape':
+                            this.closeCustomSelect();
+                            break;
+                    }
+                });
+
+                this.elements.hostInput.addEventListener('input', this.onHostInput.bind(this));
+                this.elements.hostInput.addEventListener('focus', this.onHostInput.bind(this));
+                this.elements.hostInput.addEventListener('keydown', this.onHostKeyDown.bind(this));
+                this.elements.attendeeInput.addEventListener('input', this.onAttendeeInput.bind(this));
+                this.elements.attendeeInput.addEventListener('keydown', this.onAttendeeKeyDown.bind(this));
+                this.elements.eventForm.addEventListener('submit', (e) => { e.preventDefault(); this.submitForm(); });
+                this.elements.confirmButton.addEventListener('click', () => {
+                  if (this.state.confirmationCallback) this.state.confirmationCallback(true);
+                });
+                this.elements.cancelButton.addEventListener('click', () => {
+                  if (this.state.confirmationCallback) this.state.confirmationCallback(false);
+                });
+                this.elements.choiceCancelButton.addEventListener('click', () => {
+                    this.elements.choicePromptContainer.style.display = 'none';
+                    if (this.state.choiceResolver) {
+                        this.state.choiceResolver(null);
+                        this.state.choiceResolver = null;
+                    }
+                });
+
+                const usernameRules = this.state.validationRules.USERNAME;
+                let maskOptions = { mask: /.*/ };
+                if (usernameRules && usernameRules.REGEX) {
+                    maskOptions = { mask: new RegExp(usernameRules.REGEX) };
+                } else {
+                    maskOptions = { mask: /^[a-zA-Z0-9_]{0,20}$/ };
+                }
+                this._applyMask(this.elements.hostInput, maskOptions);
+                this._applyMask(this.elements.attendeeInput, maskOptions);
+
+                this.elements.hostInput.addEventListener('blur', () => {
+                    setTimeout(() => this.elements.hostSuggestions.classList.add('hidden'), 150);
+                });
+                this.elements.attendeeInput.addEventListener('blur', () => {
+                    setTimeout(() => this.elements.attendeeSuggestions.classList.add('hidden'), 150);
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.autocomplete-container')) {
+                        this.elements.hostSuggestions.classList.add('hidden');
+                        this.elements.attendeeSuggestions.classList.add('hidden');
+                    }
+                });
+              },
+
+            navigateOptions: function(direction) {
+                const options = Array.from(this.elements.sectionCustomList.querySelectorAll('li[role="option"]'));
+                if (options.length === 0) return;
+
+                const currentlyFocused = this.elements.sectionCustomList.querySelector('.focused');
+                if (currentlyFocused) currentlyFocused.classList.remove('focused');
+
+                if (this.state.focusedOptionIndex === -1) {
+                    this.state.focusedOptionIndex = direction > 0 ? 0 : options.length - 1;
+                } else {
+                    this.state.focusedOptionIndex += direction;
+                    if (this.state.focusedOptionIndex >= options.length) {
+                        this.state.focusedOptionIndex = 0;
+                    } else if (this.state.focusedOptionIndex < 0) {
+                        this.state.focusedOptionIndex = options.length - 1;
+                    }
+                }
+
+                const newFocused = options[this.state.focusedOptionIndex];
+                if (newFocused) {
+                    newFocused.classList.add('focused');
+                    this.elements.sectionCustomToggle.setAttribute('aria-activedescendant', 'option-' + this.state.focusedOptionIndex);
+                    newFocused.scrollIntoView({ block: 'nearest' });
+
+                    announceToScreenReader(`Option ${this.state.focusedOptionIndex + 1} of ${options.length}: ${newFocused.textContent}`);
+                }
+            },
+
+            _cycleSelectOptionOnWheel: function(event) {
+               event.preventDefault();
+               this._cycleSelect(event.target, event.deltaY > 0 ? 1 : -1);
+            },
+
+            _cycleSelect: function(select, direction) {
+                const options = select.options;
+                if (options.length <= 1) return;
+
+                let newIndex = select.selectedIndex;
+                let attempts = 0;
+                do {
+                  newIndex = (newIndex + direction + options.length) % options.length;
+                  attempts++;
+                  if (attempts > options.length) return;
+                } while (options[newIndex].disabled || options[newIndex].value === "");
+
+                select.selectedIndex = newIndex;
+                select.dispatchEvent(new Event('change'));
+            },
+
+            _populateSelects: function(data) {
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                days.forEach(day => this.elements.daySelect.appendChild(new Option(day, day)));
+                this.elements.daySelect.value = days[new Date().getDay()];
+
+                const eventTypePlaceholder = new Option("[ Select Type ]", "");
+                this.elements.eventTypeSelect.classList.add('select-placeholder');
+                eventTypePlaceholder.classList.add('placeholder-option');
+                this.elements.eventTypeSelect.appendChild(eventTypePlaceholder);
+                (data.eventTypes || []).forEach(et => this.elements.eventTypeSelect.appendChild(new Option(et, et)));
+
+                this.elements.sectionSelect.innerHTML = '';
+                this.elements.sectionCustomList.innerHTML = '';
+                const sectionPlaceholder = document.createElement('option');
+                sectionPlaceholder.value = '';
+                sectionPlaceholder.textContent = '[ Select Section ]';
+                sectionPlaceholder.classList.add('placeholder-option');
+                this.elements.sectionSelect.appendChild(sectionPlaceholder);
+
+                let sortedHierarchy = this.state.structureData.hierarchy || [];
+
+                const buildOptions = (nodes, parentUl, isTopLevel = false, currentPath = '') => {
+                    nodes.forEach((node, index) => {
+                        const isSelectable = !!node.name;
+                        const hasChildren = node.children && node.children.length > 0;
+                        const newPath = currentPath ? `${currentPath}>${node.name}` : node.name;
+
+                        const li = document.createElement('li');
+                        const span = document.createElement('span');
+                        span.textContent = node.name;
+                        li.appendChild(span);
+
+                        if (isSelectable) {
+                              li.dataset.value = newPath;
+                              li.setAttribute('role', 'option');
+                              li.setAttribute('aria-selected', 'false');
+                              li.setAttribute('tabindex', '-1');
+                              li.id = `option-${parentUl.children.length}`;
+                              this.elements.sectionSelect.appendChild(new Option(node.name, newPath));
+                        } else {
+                              li.style.cursor = 'default';
+                              li.setAttribute('aria-hidden', 'true');
+                        }
+
+                        if (isTopLevel) li.classList.add('top-level-item');
+
+                        parentUl.appendChild(li);
+
+                        if (hasChildren) {
+                            const subUl = document.createElement('ul');
+                            li.appendChild(subUl);
+                            buildOptions(node.children, subUl, false, newPath);
+                        }
+                    });
+                };
+
+                buildOptions(sortedHierarchy, this.elements.sectionCustomList, true);
+                },
+            _findParentGroup: function(locationName) {
+                for (const groupName in this.state.structureData.groups) {
+                    if (this.state.structureData.groups[groupName].includes(locationName)) {
+                        return groupName;
+                    }
+                }
+                return null;
+            },
+            _parseDateAndGetDay: function(dateString) {
+                if (!dateString || typeof dateString !== 'string') return null;
+
+                const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const lowerDateString = dateString.toLowerCase().trim();
+                const matchingDay = daysOfWeek.find(d => d.toLowerCase().startsWith(lowerDateString));
+                if (matchingDay) {
+                    return matchingDay;
+                }
+
+                try {
+                    const trimmedDate = dateString.trim();
+                    const parts = trimmedDate.split(/[\/\-]/);
+                    if (parts.length !== 3) return null;
+
+                    let day, month, year;
+                    const [p1, p2, p3] = parts.map(p => parseInt(p, 10));
+
+                    switch(this.state.dateFormat) {
+                        case "DD/MM/YY":
+                            day = p1; month = p2 - 1; year = p3; break;
+                        case "YYYY-MM-DD":
+                            year = p1; month = p2 - 1; day = p3; break;
+                        case "MM/DD/YY":
+                        default:
+                            month = p1 - 1; day = p2; year = p3; break;
+                    }
+
+                    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+                    if (year < 100) year += 2000;
+
+                    const date = new Date(year, month, day);
+                    if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+                        return daysOfWeek[date.getDay()];
+                    }
+                    return null;
+                } catch (e) { return null; }
+            },
+            onTextChange: async function() {
+                if (this.state.isUpdatingFromFields) return;
+
+                const cursorPosition = this.elements.eventLogText.selectionStart;
+                const parsed = await this._parsePastedText(this.elements.eventLogText.value);
+
+                this._updateFormFromParsedData(parsed);
+                this.updateLogText(cursorPosition);
+                this.validateForm();
+            },
+
+            _parsePastedText: async function(text) {
+                const result = {
+                    eventType: null,
+                    sectionResolution: null,
+                    host: null,
+                    day: null,
+                    description: null,
+                    attendees: []
+                };
+
+                if (!text || !text.trim()) return result;
+
+                const lines = text.split('\n');
+                let currentSection = null; 
+                let dateFound = false;
+
+
+                const processAttendeesFromValue = (value, attendeesArray) => {
+                    if (!value || !value.trim()) return;
+                    const lines = value.split('\n');
+                    lines.forEach(line => {
+                        let currentLine = line;
+                        const mentionRegex = /<@!?(\d{17,20})>/g;
+                        const mentions = Array.from(currentLine.matchAll(mentionRegex));
+                        mentions.forEach(match => {
+                            const discordId = match[1];
+                            const playerName = this.state.discordIdToNameMap.get(discordId);
+                            if (playerName) attendeesArray.push(playerName);
+                            currentLine = currentLine.replace(match[0], '');
+                        });
+                        const cleanedLine = currentLine.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/,/g, ' ');
+                        const potentialNames = cleanedLine.trim().split(/\s+/);
+                        potentialNames.forEach(name => {
+                            if (name.length > 2) {
+                                const identifiedPlayer = this._identifyPlayer(name);
+                                if (identifiedPlayer) attendeesArray.push(identifiedPlayer);
+                            }
+                        });
+                    });
+                };
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) {
+                        currentSection = null; 
+                        continue;
+                    }
+
+                    if (!dateFound) {
+                        const parsedDay = this._parseDateAndGetDay(trimmedLine);
+                        if (parsedDay) {
+                            result.day = parsedDay;
+                            dateFound = true;
+                        }
+                    }
+
+                    const keyMatch = trimmedLine.match(/^([^:]+):/);
+                    if (keyMatch) {
+                        currentSection = null; 
+                        const key = keyMatch[1].trim().toLowerCase();
+                        let value = trimmedLine.substring(keyMatch[0].length).trim();
+
+                        if (key === 'event type' || key === 'event') {
+                            result.eventType = this._findBestEventTypeMatch(value);
+                        } else if (key === 'section') {
+                            result.sectionResolution = await this._resolveSection(value);
+                        } else if (key === 'day') {
+                            const dayOptions = Array.from(this.elements.daySelect.options).map(o => o.value);
+                            const dayFromValue = this._parseDateAndGetDay(value) || value;
+                            result.day = dayOptions.find(d => d.toLowerCase().startsWith(dayFromValue.toLowerCase())) || dayFromValue;
+                            dateFound = true; 
+                        } else if (key === 'host') {
+                            result.host = this._identifyPlayer(value);
+                        } else if (key.startsWith('desc')) {
+                            result.description = value;
+                            currentSection = 'description'; 
+                        } else if (key.startsWith('attend')) {
+                            if (value) processAttendeesFromValue(value, result.attendees);
+                            currentSection = 'attendees'; 
+                        }
+                    } else {
+                        const lowerLine = trimmedLine.toLowerCase();
+
+                        if (['attendees', 'participants', 'present', 'roster'].includes(lowerLine)) {
+                            currentSection = 'attendees';
+                        } else if (['description', 'details', 'summary', 'notes'].includes(lowerLine)) {
+                            currentSection = 'description';
+                            result.description = result.description || ''; 
+                        }
+                        else if (currentSection === 'attendees') {
+                            processAttendeesFromValue(trimmedLine, result.attendees);
+                        } else if (currentSection === 'description') {
+                            result.description += (result.description ? '\n' : '') + trimmedLine;
+                        }
+                    }
+                }
+
+                let finalAttendees = [...new Set(result.attendees)];
+                if (result.host) {
+                    const hostNameLower = result.host.toLowerCase();
+                    finalAttendees = finalAttendees.filter(attendee => attendee.toLowerCase() !== hostNameLower);
+                }
+                result.attendees = finalAttendees;
+
+                return result;
+            },
+            _identifyPlayer: function(rawString) {
+                if (!rawString || !rawString.trim()) return null;
+
+                const idRegex = /<@!?(\d{17,20})>/;
+                const idMatch = rawString.match(idRegex);
+                if (idMatch) {
+                    const discordId = idMatch[1];
+                    const playerName = this.state.discordIdToNameMap.get(discordId);
+                    if (playerName) {
+                        return playerName;
+                    }
+                }
+
+                let cleanedString = rawString
+                    .replace(/<@!?\d{17,20}>/g, '')
+                    .replace(/\[.*?\]/g, '')
+                    .replace(/\(.*?\)/g, '')
+                    .replace(/@/g, '')
+                    .replace(/[^\w\s_]/g, '')
+                    .trim();
+
+                const potentialNames = cleanedString.split(/[\s,]+/);
+                for (const name of potentialNames) {
+                    if (name.length > 2) {
+                        const properName = this.state.companymenNames.get(name.toLowerCase());
+                        if (properName) {
+                            return properName; 
+                        }
+                    }
+                }
+
+                if (potentialNames.length > 0 && potentialNames[0].length > 2) {
+                    return potentialNames[0];
+                }
+
+                if (cleanedString) {
+                    return cleanedString;
+                }
+
+                return null;
+            },
+            _updateFormFromParsedData: async function(data) {
+                this.elements.eventTypeSelect.value = data.eventType || "";
+                this.elements.eventTypeSelect.dispatchEvent(new Event('change'));
+
+                if (data.sectionResolution) {
+                    const res = data.sectionResolution;
+                    switch(res.type) {
+                        case 'exact':
+                            this.selectSection(res.data[0].fullPath, res.data[0].name);
+                            break;
+                        case 'suggestion':
+                            const confirmed = await this.showConfirmation(`Did you mean '${res.data[0].name}'?`, "Yes", "No");
+                            if (confirmed) {
+                                this.selectSection(res.data[0].fullPath, res.data[0].name);
+                            }
+                            break;
+                        case 'multiple':
+                            const lca = this._findLastCommonAncestor(res.data.map(d => d.fullPath));
+                            const choices = res.data.map(d => this._getDisplayLabelForMatch(d, lca));
+                            const choice = await this.promptForChoice(
+                                'Ambiguous Section',
+                                `"${res.query}" could refer to multiple sections, please choose one;`,
+                                choices
+                            );
+                            if (choice) {
+                                const chosenIndex = choices.indexOf(choice);
+                                const chosenData = res.data[chosenIndex];
+                                this.selectSection(chosenData.fullPath, chosenData.name);
+                            }
+                            break;
+                        default:
+                             this.elements.sectionSelect.value = "";
+                             this.elements.sectionCustomToggle.textContent = '[ Select Section ]';
+                             this.elements.sectionCustomToggle.classList.add('placeholder');
+                             break;
+                    }
+                }
+
+                if (data.day) {
+                    this.elements.daySelect.value = data.day;
+                    if (!this.elements.daySelect.value) {
+                        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                        const today = days[new Date().getDay()];
+                        this.elements.daySelect.value = today;
+                    }
+                } else {
+                    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    const today = days[new Date().getDay()];
+                    this.elements.daySelect.value = today;
+                }
+                this.elements.description.value = data.description || "";
+                this._clearChips(this.elements.hostContainer);
+                if (data.host) this._createChip(data.host, 'host');
+                this._clearChips(this.elements.attendeesContainer);
+                data.attendees.forEach(name => this._createChip(name, 'attendee'));
+            },
+            _createChip: function(name, type) {
+                this._lockScroll(); 
+                const container = type === 'host' ? this.elements.hostContainer : this.elements.attendeesContainer;
+                if (type === 'host') this._clearChips(container);
+
+                const properName = this.state.companymenNames.get(name.toLowerCase());
+                const isRecognized = !!properName;
+                const displayName = properName || name;
+                const displayNameLower = displayName.toLowerCase();
+
+                if (type === 'host') {
+                    const attendeeChips = this.elements.attendeesContainer.querySelectorAll('.chip');
+                    attendeeChips.forEach(chip => {
+                        if (chip.dataset.name.toLowerCase() === displayNameLower) {
+                            chip.remove();
+                        }
+                    });
+                } else if (type === 'attendee') {
+                    const hostChip = this.elements.hostContainer.querySelector('.chip');
+                    if (hostChip && hostChip.dataset.name.toLowerCase() === displayNameLower) {
+                        hostChip.remove();
+                    }
+                }
+
+                if (type === 'attendee' && Array.from(container.querySelectorAll('.chip')).some(c => c.dataset.name.toLowerCase() === displayName.toLowerCase())) {
+                    return;
+                }
+
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.dataset.name = displayName;
+                chip.setAttribute('role', 'option');
+
+                const textSpan = document.createElement('span');
+                textSpan.textContent = displayName;
+                chip.appendChild(textSpan);
+
+                if (!isRecognized) {
+                    if (type === 'attendee') {
+                        chip.classList.add('warning');
+                    } else {
+                        chip.classList.add('unrecognized');
+                    }
+                    let bestMatch = null;
+
+                    const dynamicThreshold = Math.max(1, Math.min(3, Math.floor(name.length / 4)));
+                    let minDistance = dynamicThreshold;
+
+                    this.state.companymenNames.forEach((properName) => {
+                        const distance = levenshtein(name.toLowerCase(), properName.toLowerCase());
+                        if (distance <= minDistance) {
+                            minDistance = distance;
+                            bestMatch = properName;
+                        }
+                    });
+
+                    if (bestMatch) {
+                        this._addWarningSpan(chip, `(Did you mean '${bestMatch}'?)`, () => {
+                            chip.dataset.name = bestMatch;
+                            textSpan.textContent = bestMatch;
+                            chip.classList.remove(type === 'attendee' ? 'warning' : 'unrecognized');
+                            chip.querySelector('.suggestion')?.remove();
+
+                            this.updateLogText();
+                            this.validateForm();
+                        });
+                    }
+                } else if (type === 'host') {
+                    const hostData = this.state.ncos.find(p => p.player.toLowerCase() === displayName.toLowerCase());
+
+                    if (!hostData) {
+                        chip.classList.add('unrecognized');
+                        this._addWarningSpan(chip, '(Not an eligible host)');
+                    } else {
+                        const minHostRankIndex = this.state.rankHierarchy.map(r => r.name.toUpperCase()).indexOf(this.state.minHostRank.toUpperCase());
+                        const hostRankIndex = this.state.rankHierarchy.map(r => r.name.toUpperCase()).indexOf((hostData.rank || '').toUpperCase());
+
+                        if (minHostRankIndex !== -1 && (hostRankIndex === -1 || hostRankIndex < minHostRankIndex)) {
+                            chip.classList.add('unrecognized');
+                            this._addWarningSpan(chip, '(Rank too low)');
+                        }
+                    }
+                }
+
+                chip.addEventListener('mousedown', (e) => {
+                    if (e.button === 1) {
+                        e.preventDefault();
+                    }
+                });
+                chip.addEventListener('mouseup', (e) => {
+                    if (e.button === 1) {
+                        chip.remove();
+                        this.updateLogText();
+                    }
+                });
+
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = '×';
+                removeBtn.setAttribute('role', 'button');
+                removeBtn.setAttribute('aria-label', `Remove ${displayName}`);
+                removeBtn.onclick = () => {
+                    chip.remove();
+                    this.updateLogText();
+                };
+                chip.appendChild(removeBtn);
+
+                container.insertBefore(chip, container.querySelector('.autocomplete-container'));
+
+            if (type === 'host') {
+                this.elements.hostInput.value = '';
+                setTimeout(() => this.elements.attendeeInput.focus(), 50);
+            } else {
+                this.elements.attendeeInput.value = '';
+                setTimeout(() => this.elements.attendeeInput.focus(), 50);
+            }
+                this.updateLogText();
+
+                setTimeout(() => {
+                    this._unlockScroll(); 
+                }, 0);
+            },
+            _clearChips: container => {
+                container.querySelectorAll('.chip').forEach(c => c.remove());
+            },
+            updateLogText: function(cursorPosition = null) {
+                this.state.isUpdatingFromFields = true;
+                const eventType = this.elements.eventTypeSelect.value;
+                const section = this.elements.sectionSelect.value;
+                const day = this.elements.daySelect.value;
+                const host = this.elements.hostContainer.querySelector('.chip')?.dataset.name || '';
+                const description = this.elements.description.value;
+                const attendees = Array.from(this.elements.attendeesContainer.querySelectorAll('.chip')).map(c => c.dataset.name);
+
+                let log = `Event Type: ${eventType}\nSection: ${section}\nDay: ${day}\nHost: ${host}\n`;
+                if (description) {
+                    log += `Description: ${description}\n`;
+                }
+                log += `Attendees:`;
+                log += attendees.join('\n');
+                const newLogContent = log + '\n';
+                const textarea = this.elements.eventLogText;
+
+                textarea.value = newLogContent;
+
+                if (cursorPosition !== null && document.activeElement === textarea) {
+                    textarea.selectionStart = cursorPosition;
+                    textarea.selectionEnd = cursorPosition;
+                } else {
+                    textarea.selectionStart = newLogContent.length;
+                    textarea.selectionEnd = newLogContent.length;
+                }
+
+                this.validateForm();
+                setTimeout(() => {
+                    this.state.isUpdatingFromFields = false;
+                }, 100);
+            },
+            onSectionChange: function() {
+                this.updateLogText();
+            },
+            onHostInput: function() {
+                this.handleAutocomplete(this.elements.hostInput, this.elements.hostSuggestions, this._getFilteredNcos());
+            },
+            onAttendeeInput: function() {
+                this.handleAutocomplete(this.elements.attendeeInput, this.elements.attendeeSuggestions, this.state.allCompanymen);
+            },
+            onHostKeyDown: function(e) {
+                this.handleAutocompleteKeyDown(e, 'host');
+            },
+            onAttendeeKeyDown: function(e) {
+                this.handleAutocompleteKeyDown(e, 'attendee');
+            },
+            _applyMask: function(element, maskOptions) {
+                if (!element) return;
+                if (this.state.inputMasks.has(element.id)) {
+                    this.state.inputMasks.get(element.id).destroy();
+                }
+                const mask = IMask(element, maskOptions);
+                this.state.inputMasks.set(element.id, mask);
+            },
+            _getFilteredNcos: function() {
+                const selectedSection = this.elements.sectionSelect.value;
+                if (!selectedSection) {
+                    return this.state.ncos;
+                }
+                const sectionName = selectedSection.split('>').pop();
+                return this.state.ncos.filter(nco => nco.location === sectionName);
+            },
+
+                        handleAutocomplete: function(inputEl, suggestionsEl, sourceList) {
+                const query = inputEl.value.toLowerCase();
+                suggestionsEl.innerHTML = '';
+                suggestionsEl.classList.add('hidden');
+
+                if (query.length < 1 && inputEl.id !== 'host-input') return;
+
+                const hostChip = this.elements.hostContainer.querySelector('.chip');
+                const hostName = hostChip ? hostChip.dataset.name.toLowerCase() : null;
+                const attendeeNames = new Set(
+                    Array.from(this.elements.attendeesContainer.querySelectorAll('.chip')).map(c => c.dataset.name.toLowerCase())
+                );
+
+                const seenPlayers = new Set();
+                const suggestionElements = [];
+
+                const addSuggestion = (person, isFuzzy = false) => {
+                    if (seenPlayers.has(person.player.toLowerCase())) return;
+
+                    const personNameLower = person.player.toLowerCase();
+                    if (attendeeNames.has(personNameLower) || (hostName && hostName === personNameLower)) return;
+
+                    const div = document.createElement('div');
+                    div.setAttribute('role', 'option');
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = `${person.player} (${person.rank} - ${person.location}) `;
+                    div.appendChild(nameSpan);
+
+                    if (isFuzzy) {
+                        const fuzzySpan = document.createElement('span');
+                        fuzzySpan.textContent = '(similar)';
+                        fuzzySpan.style.fontStyle = 'italic';
+                        fuzzySpan.style.color = '#666';
+                        div.appendChild(fuzzySpan);
+                    }
+
+                    div.onclick = () => {
+                        const type = inputEl.id.includes('host') ? 'host' : 'attendee';
+                        this._createChip(person.player, type);
+                        suggestionsEl.innerHTML = '';
+                        suggestionsEl.classList.add('hidden');
+                        inputEl.focus();
+                    };
+
+                    suggestionElements.push(div);
+                    seenPlayers.add(personNameLower);
+                };
+
+                const directMatches = sourceList.filter(person => 
+                    person.player.toLowerCase().includes(query)
+                );
+                directMatches.forEach(person => addSuggestion(person, false));
+
+                if (query.length > 2) {
+                    const dynamicThreshold = Math.max(1, Math.floor(query.length / 4));
+                    const fuzzyMatches = [];
+                    sourceList.forEach(person => {
+                        const distance = levenshtein(query, person.player.toLowerCase());
+                        if (distance > 0 && distance <= dynamicThreshold) {
+                           fuzzyMatches.push({ ...person, distance });
+                        }
+                    });
+                    fuzzyMatches.sort((a, b) => a.distance - b.distance);
+                    fuzzyMatches.forEach(person => addSuggestion(person, true));
+                }
+
+                if (suggestionElements.length > 0) {
+                    suggestionElements.slice(0, 10).forEach(el => suggestionsEl.appendChild(el));
+                    suggestionsEl.classList.remove('hidden');
+                    this._ensureElementIsVisible(this.elements.mainContainer, suggestionsEl);
+                }
+            },
+            handleAutocompleteKeyDown: function(event, type) {
+                const inputEl = type === 'host' ? this.elements.hostInput : this.elements.attendeeInput;
+                const suggestionsEl = type === 'host' ? this.elements.hostSuggestions : this.elements.attendeeSuggestions;
+                const suggestions = suggestionsEl.children;
+
+                if (suggestions.length === 0 && event.key !== 'Enter' && event.key !== 'Backspace' && event.key !== ',') return;
+
+                const selected = suggestionsEl.querySelector('.selected');
+
+                const isCommitKey = event.key === 'Enter' || (type === 'attendee' && event.key === ',');
+
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    let next;
+                    if (selected) {
+                        selected.classList.remove('selected');
+                        next = (event.key === 'ArrowDown') ? selected.nextElementSibling : selected.previousElementSibling;
+                    }
+
+                    if (!next) {
+                        next = (event.key === 'ArrowDown') ? suggestions[0] : suggestions[suggestions.length - 1];
+                    }
+                    if(next) next.classList.add('selected');
+
+                } else if (isCommitKey) {
+                    event.preventDefault(); 
+                    
+                    if (selected) {
+                        selected.click();
+                    } else if (inputEl.value.trim()) {
+                        const cleanValue = inputEl.value.trim().replace(/,$/, ''); 
+                        if (cleanValue && this._validateUsernameInput(inputEl)) {
+                            this._createChip(cleanValue, type);
+                        } else {
+                            inputEl.value = '';
+                        }
+                    }
+                } else if (event.key === 'Backspace' && inputEl.value === '' && !event.repeat) {
+                    const container = type === 'host' ? this.elements.hostContainer : this.elements.attendeesContainer;
+                    const chips = container.querySelectorAll('.chip');
+
+                    if (chips.length > 0) {
+                        chips[chips.length - 1].remove();
+                        this.updateLogText();
+                        event.preventDefault(); 
+                    }
+                }
+            },
+            _validateUsernameInput: function(inputEl) {
+                const value = inputEl.value.trim();
+                if (!value) return true;
+
+                const rules = this.state.validationRules.USERNAME;
+                if (!rules) return true;
+
+                if (rules.MIN_LENGTH && value.length < rules.MIN_LENGTH) {
+                    return false; 
+                } else if (rules.MAX_LENGTH && value.length > rules.MAX_LENGTH) {
+                    return false; 
+                } else if (rules.REGEX && !new RegExp(rules.REGEX).test(value)) {
+                    return false; 
+                }
+
+                return true;
+            },
+            validateForm: function() {
+                let errors = {
+                    eventType: '',
+                    section: '',
+                    day: '',
+                    host: '',
+                    attendees: ''
+                };
+
+                if (!this.elements.eventTypeSelect.value) errors.eventType = "Event Type is required.";
+                if (!this.elements.sectionSelect.value) errors.section = "Section is required.";
+
+                const hostChip = this.elements.hostContainer.querySelector('.chip');
+                if (!hostChip) {
+                    errors.host = "A host is required.";
+                } else {
+                    const hostName = hostChip.dataset.name;
+                    const hostNameLower = hostName.toLowerCase();
+                    const hostData = this.state.ncos.find(p => p.player.toLowerCase() === hostNameLower);
+                    const isRecognizedMember = this.state.allCompanymen.some(p => p.player.toLowerCase() === hostNameLower);
+
+                    const oldSuggestion = hostChip.querySelector('.suggestion, .warning-text');
+                    if (oldSuggestion) oldSuggestion.remove();
+                    hostChip.classList.remove('unrecognized');
+                    const hostChipTextSpan = hostChip.querySelector('span:not(.remove-btn)');
+
+                    if (!hostData) {
+                        hostChip.classList.add('unrecognized');
+                        if (isRecognizedMember) {
+                             errors.host = `${hostName} is not an eligible host (Rank too low).`;
+                        } else {
+                            let bestMatch = null;
+                            let minDistance = 3;
+                            this.state.ncos.forEach(nco => {
+                                const distance = levenshtein(hostNameLower, nco.player.toLowerCase());
+                                if (distance < minDistance) {
+                                    minDistance = distance;
+                                    bestMatch = nco.player;
+                                }
+                            });
+
+                            if (bestMatch) {
+                                errors.host = "Unrecognized host.";
+                                this._addWarningSpan(hostChip, `(Did you mean '${bestMatch}'?)`, () => {
+                                    this._clearChips(this.elements.hostContainer);
+                                    this._createChip(bestMatch, 'host');
+                                });
+                            } else {
+                                errors.host = "Host is not a recognized member.";
+                            }
+                        }
+                    } else {
+                        const selectedSection = this.elements.sectionSelect.value;
+                        const sectionName = selectedSection ? selectedSection.split('>').pop() : '';
+
+                        if (hostData.location && hostData.location !== sectionName) {
+                            hostChip.classList.add('unrecognized');
+                            const suggestionText = `(Correct Section?)`;
+                            this._addWarningSpan(hostChip, suggestionText, () => {
+                                this.selectSection(hostData.location, hostData.location);
+                            });
+                        }
+                    }
+                }
+
+                const attendeeChips = this.elements.attendeesContainer.querySelectorAll('.chip');
+                let attendeeWarningMessage = '';
+
+                if (attendeeChips.length === 0) {
+                    errors.attendees = "At least one attendee is required.";
+                } else {
+                    const eventType = this.elements.eventTypeSelect.value;
+                    let minAttendees = 2; 
+
+                    if (eventType) {
+                        const definition = this.state.eventTypeDefinitions.find(def => def.name === eventType);
+                        if (definition && typeof definition.minAttendees === 'number') {
+                            minAttendees = definition.minAttendees; 
+                        }
+                    }
+
+                    if (attendeeChips.length < minAttendees) {
+                        errors.attendees = `This event requires at least ${minAttendees} attendee(s).`;
+                    }
+                }
+
+                if (!errors.attendees && Array.from(attendeeChips).some(c => c.classList.contains('warning'))) {
+                    attendeeWarningMessage = "One or more attendees are unrecognized.";
+                }
+                if (!this.elements.daySelect.value) {
+                    errors.day = "Day is required.";
+                } else {
+                    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    const todayIndex = new Date().getDay();
+                    const selectedDayIndex = days.findIndex(d => d.toLowerCase() === this.elements.daySelect.value.toLowerCase());
+                    if (selectedDayIndex > -1 && selectedDayIndex > todayIndex) {
+                        errors.day = "Selected day is in the future.";
+                    }
+                }
+
+                this._showFieldError('eventType', errors.eventType); 
+                this._showFieldError('section', errors.section);
+                this._showFieldError('day', errors.day, true);
+                this._showFieldError('host', errors.host);
+                this._showFieldError('attendees', errors.attendees || attendeeWarningMessage, !!attendeeWarningMessage);
+                const hasUnrecognizedHost = hostChip && hostChip.classList.contains('unrecognized');
+                const isValid = !errors.eventType && !errors.section && !errors.host && !errors.attendees && !hasUnrecognizedHost;
+                this.elements.submitButton.disabled = !isValid;            },
+            _showFieldError: function(field, message, isWarning = false) {
+                const icon = this.elements[field + 'InfoIcon'];
+                if (message) {
+                    icon.title = message;
+                    icon.classList.remove('hidden');
+                    icon.classList.toggle('warning', isWarning);
+                } else {
+                    icon.classList.add('hidden');
+                }
+            },
+            _addWarningSpan: function(parent, text, clickCallback = null) {
+                if (!parent) return;
+                if (parent.querySelector('.suggestion') || parent.querySelector('.warning-text')) return;
+
+                const span = document.createElement('span');
+                span.textContent = ` ${text}`;
+                if (clickCallback) {
+                    span.className = 'suggestion';
+                    span.onclick = (e) => {
+                        e.stopPropagation();
+                        this._lockScroll(); 
+
+                        clickCallback(); 
+
+                        setTimeout(() => {
+                            this._unlockScroll(); 
+                        }, 0);
+                    };
+                } else {
+                    span.className = 'warning-text';
+                }
+
+                const removeBtn = parent.querySelector('.remove-btn');
+                if (removeBtn) {
+                    parent.insertBefore(span, removeBtn);
+                } else {
+                    parent.appendChild(span); 
+                }
+            },
+submitForm: function() {
+    this.validateForm();
+    if (this.elements.submitButton.disabled) return;
+
+    this.setUiLock(true, 'Logging Event...');
+
+    const eventData = this._getCurrentFormData(); 
+
+    google.script.run
+        .withSuccessHandler(this.onSubmitSuccess.bind(this))
+        .withFailureHandler(this.Alecto_Clamat.bind(this))
+        .Janus_Registrat(eventData);
+},
+
+onSubmitSuccess: function(response) {
+    if (response.status === "SUCCESS") {
+        google.script.run.Fama_Susurrat("Event logged successfully!", "SUCCESS", 3);
+        this.clearForm();
+
+        if (response.webhookPayload) {
+                    }
+
+    } else {
+        this.Alecto_Clamat({ message: response.message });
+        return; 
+    }
+
+    this.setUiLock(false);
+},
+            clearForm: function() {
+                this.elements.eventLogText.value = '';
+                this.elements.eventTypeSelect.value = '';
+                this.elements.description.value = '';
+                this._clearChips(this.elements.hostContainer);
+                this._clearChips(this.elements.attendeesContainer);
+
+                this.elements.sectionSelect.value = "";
+                this.elements.sectionCustomToggle.textContent = '[ Select Section ]';
+                this.elements.sectionCustomToggle.classList.add('placeholder');
+
+                this.updateLogText();
+            },
+Alecto_Clamat: function(error) {
+    this.showConfirmation("Error: " + (error.message || "An unknown error occurred."), "OK", null);
+    this.setUiLock(false);
+},
+            _getPathToShortcutMap: function() {
+                if (this.state.pathToShortcutMap) return this.state.pathToShortcutMap;
+
+                const map = new Map();
+                const traverse = (nodes, path = []) => {
+                    nodes.forEach(node => {
+                        const currentPath = [...path, node.name];
+                        const fullPathStr = currentPath.join('>');
+                        if (node.shortcuts && node.shortcuts.length > 0) {
+                            map.set(fullPathStr, node.shortcuts[0]);
+                        }
+                        if (node.children) traverse(node.children, currentPath);
+                    });
+                };
+                traverse(this.state.hierarchy);
+                this.state.pathToShortcutMap = map;
+                return map;
+            },
+
+            _findLastCommonAncestor: function(paths) {
+                if (!paths || paths.length < 2) return '';
+
+                const splitPaths = paths.map(p => p.split('>'));
+                const shortestPath = splitPaths.reduce((a, b) => a.length <= b.length ? a : b);
+                let lcaIndex = -1;
+
+                for (let i = 0; i < shortestPath.length -1; i++) {  
+                    const levelName = shortestPath[i];
+                    if (splitPaths.every(p => p[i] === levelName)) {
+                        lcaIndex = i;
+                    } else {
+                        break;
+                    }
+                }
+
+                return lcaIndex === -1 ? '' : splitPaths[0].slice(0, lcaIndex + 1).join('>');
+            },
+            _getDisplayLabelForMatch: function(match, lca) {
+                const shortcutMap = this._getPathToShortcutMap();
+                const pathParts = match.fullPath.split('>');
+
+                const lcaPartsLength = lca ? lca.split('>').length : 0;
+                const relevantPathParts = pathParts.slice(lcaPartsLength);
+
+                const displayBreadcrumb = relevantPathParts.map((part, index) => {
+                    const subPath = pathParts.slice(0, lcaPartsLength + index + 1).join('>');
+                    return shortcutMap.get(subPath) || part;
+                }).join(' > ');
+
+                if (relevantPathParts.length === 1 && shortcutMap.get(match.fullPath)) {
+                    return `${match.name} (${displayBreadcrumb})`;
+                }
+
+                return displayBreadcrumb;
+            },
+                        _resolveSection: async function(query) {
+                if (!query || !query.trim()) return { type: 'none' };
+                const lowerQuery = query.toLowerCase().trim();
+
+                const cleanedQuery = lowerQuery.replace(/(\d+)(st|nd|rd|th)\b/g, '$1');
+
+                const flatHierarchy = [];
+                const traverse = (nodes, path = []) => {
+                    nodes.forEach(node => {
+                        const currentPath = [...path, node.name];
+                        const unit = {
+                            name: node.name,
+                            fullPath: currentPath.join('>'),
+                            shortcuts: (node.shortcuts || []).map(s => s.toLowerCase()),
+                            searchable: [node.name.toLowerCase(), ...(node.shortcuts || []).map(s => s.toLowerCase())].join(' ')
+                        };
+                        flatHierarchy.push(unit);
+                        if (node.children) traverse(node.children, currentPath);
+                    });
+                };
+                traverse(this.state.hierarchy);
+
+                let scoredMatches = flatHierarchy.map(unit => {
+                    let score = 0;
+                    if (unit.shortcuts.includes(cleanedQuery)) score = 100;
+                    else if (unit.name.toLowerCase() === cleanedQuery) score = 90;
+                    else if (unit.searchable.includes(cleanedQuery)) score = 80;
+
+                    if (score < 80) {
+                        const queryParts = cleanedQuery.split(/\s+/).filter(p => p.length > 0);
+                        if (queryParts.length > 0 && queryParts.every(part => unit.searchable.includes(part))) {
+                            score = 50 + queryParts.length;
+                        }
+                    }
+                    return { ...unit, score };
+                }).filter(unit => unit.score > 0);
+
+                if (scoredMatches.length === 0 && cleanedQuery.length > 3) {
+                    const dynamicThreshold = Math.max(1, Math.floor(cleanedQuery.length / 4));
+                    flatHierarchy.forEach(unit => {
+                        const distance = levenshtein(cleanedQuery, unit.name.toLowerCase());
+                        if (distance <= dynamicThreshold) {
+
+                            scoredMatches.push({ ...unit, score: 40 - distance });
+                        }
+                    });
+                }
+
+                if (scoredMatches.length === 0) return { type: 'none' };
+
+                scoredMatches.sort((a, b) => b.score - a.score);
+
+                const bestScore = scoredMatches[0].score;
+                const topMatches = scoredMatches.filter(m => m.score === bestScore);
+
+                if (topMatches.length === 1) {
+                    const type = (bestScore >= 80) ? 'exact' : 'suggestion';
+                    return { type: type, data: topMatches };
+                }
+
+                if (this.state.userData && this.state.userData.locationPath) {
+                    const userPath = this.state.userData.locationPath;
+                    topMatches.forEach(m => {
+                        let common = 0;
+                        const pathA = userPath.split('>');
+                        const pathB = m.fullPath.split('>');
+                        for(let i = 0; i < Math.min(pathA.length, pathB.length); i++) {
+                            if(pathA[i] === pathB[i]) common++; else break;
+                        }
+                        m.proximity = common;
+                    });
+                    topMatches.sort((a, b) => b.proximity - a.proximity);
+                    if (topMatches[0].proximity > topMatches[1].proximity) {
+                        return { type: 'suggestion', data: [topMatches[0]] };
+                    }
+                }
+
+                return { type: 'multiple', data: topMatches, query: query };
+            },
+            promptForChoice: function(title, message, choices) {
+                return new Promise((resolve) => {
+                    this.state.choiceResolver = resolve;
+                    this.elements.choicePromptTitle.textContent = title;
+                    this.elements.choicePromptMessage.textContent = message;
+
+                    const buttonContainer = this.elements.choiceButtonsContainer;
+                    buttonContainer.innerHTML = '';
+
+                    choices.forEach(choice => {
+                        const button = document.createElement('button');
+                        button.textContent = choice;
+                        button.className = 'action';
+                        button.style.marginBottom = '5px';
+
+                        button.onclick = () => {
+                            this.elements.choicePromptContainer.style.display = 'none';
+                            if (this.state.choiceResolver) {
+                                this.state.choiceResolver(choice);
+                                this.state.choiceResolver = null;
+                            }
+                        };
+                        buttonContainer.appendChild(button);
+                    });
+
+                    this.elements.choicePromptContainer.style.display = 'flex';
+                });
+            },
+            showConfirmation: function(message, confirmText = "OK", cancelText = "Cancel") {
+              return new Promise((resolve) => {
+                this.elements.confirmationMessage.innerText = message;
+                this.elements.confirmButton.innerText = confirmText;
+                this.elements.cancelButton.classList.toggle('hidden', !cancelText);
+                if (cancelText) this.elements.cancelButton.innerText = cancelText;
+
+                this.elements.confirmationContainer.style.display = 'flex';
+
+                this.state.confirmationCallback = (result) => {
+                  this.elements.confirmationContainer.style.display = 'none';
+                  resolve(result);
+                  this.state.confirmationCallback = null;
+                };
+              });
+            },
+        };
+        window.addEventListener('load', () => App.init());
+        </script>
+</body>
+</html>
