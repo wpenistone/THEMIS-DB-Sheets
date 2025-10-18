@@ -37,8 +37,8 @@ THEMIS is a sophisticated management system built on Google Apps Script that tra
 THEMIS is absolutely overkill (with around 10,000 lines of code [THEMIS v1.5 had 1,000.]), this started as a hobby project for me, but I'd like to also help others save time.
 
 ### Deployment History
-- THEMIS v2.5x - Current (Pilot Program): IMPERIUM | Rome (290+ members)
-- THEMIS v1.0 - Previous: NORTHWIND | SLC | 2nd Company (180+ members)
+- THEMIS v2.5x - Current: IMPERIUM | Rome (290+ members)
+- THEMIS v1.0 - Current: NORTHWIND | SLC | 2nd Company (180+ members)
 - Predecessor System: NORTHWIND | SLC | Royal Rangers (90+ members)
 - - This system was built for only event logging and attendance automation.
 
