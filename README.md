@@ -102,7 +102,7 @@ During authorization, Google will ask for permission to "View and manage your sp
 - This permission is simply required by Google to allow the script to function within this one sheet
 
 #### Issues with Multiple Google Accounts
-Authorization failures often stem from being logged into multiple Google accounts. When you are logged into multiple Google accounts in the same browser, Google may not know which account to use when authorizing the script, leading to a "Permission Denied" error.
+See the [Primary Google Account Requirement](#primary-google-account-requirement) in the Limitations section.
 
 **Solutions:**
 - **Set your primary account as the default**: Log out of all Google accounts. Then, log back into the account you use to edit the sheet first. This will set it as the default account for the browser session
@@ -362,6 +362,7 @@ Configure Discord webhooks for real-time notifications:
 - Verify configuration is properly structured
 
 #### Permission Errors
+- The most likely cause is issues with multiple Google accounts, see the [Primary Google Account Requirement](#primary-google-account-requirement) in the Limitations section.
 - Ensure user has edit access to the spreadsheet
 - Check Google Apps Script permissions
 - Verify external request permissions for Discord integration
