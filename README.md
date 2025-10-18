@@ -74,9 +74,9 @@ THEMIS is absolutely overkill (with around 10,000 lines of code [THEMIS v1.5 had
 - Basic understanding of Google Apps Script (for setup)
 
 ### Data Integrity Warning
-To ensure system-wide data integrity, modifications to personnel placement, position, or slot assignments must be executed exclusively through the THEMIS system interface. Direct manual editing of these organizational fields bypasses system logic, leading to data desynchronization. 
+To ensure system-wide data integrity, modifications to personnel placement, position, or slot assignments must be executed exclusively through the THEMIS system interface. Direct manual editing of these organizational fields bypasses system logic, leading to data desynchronization.
 
-Other data fields (e.g. phase values) can be edited manually and will carry over correctly. 
+Other data fields (e.g. phase values) can be edited manually and will carry over correctly.
 
 If a manual edit to organizational fields is necessary, purge the script cache immediately via THEMIS > About > Clear Script Cache.
 
@@ -100,6 +100,9 @@ During authorization, Google will ask for permission to "View and manage your sp
 - THEMIS is hard-coded to only operate on the single spreadsheet it is bound to
 - It does not have the ability to see, access, or modify any of your other files in Google Drive
 - This permission is simply required by Google to allow the script to function within this one sheet
+
+#### Issues with Multiple Google Accounts
+Authorization failures often stem from being logged into multiple Google accounts. When you are logged into multiple Google accounts in the same browser, Google may not know which account to use when authorizing the script, leading to a "Permission Denied" error.
 
 **Solutions:**
 - **Set your primary account as the default**: Log out of all Google accounts. Then, log back into the account you use to edit the sheet first. This will set it as the default account for the browser session
