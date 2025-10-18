@@ -3107,7 +3107,7 @@ function _getHighestApplicableTir(rankName) {
     }
     return null;
 }
-function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email = null, rankTitle = null) {
+function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email = null, rankTitle = null, grantAccess = false) {
     const lock = LockService.getScriptLock();
     if (!lock.tryLock(THEMIS_CONFIG.LOCK_TIMEOUT_MS)) {
         return { status: SCRIPT_STATUS.ERROR, message: "Server is busy. Please try again." };
@@ -3115,6 +3115,15 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
 
     try {
         const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+        if (grantAccess && email) {
+            try {
+                ss.addEditor(email);
+            } catch (e) {
+                Aletheia_Testatur('ERROR', 'Dike_Iudicat_addEditor', { message: `Failed to grant editor access to ${email}, but the promotion/update will proceed. Error: ${e.message}`, user: getCurrentUserEmail() });
+            }
+        }
+
         const allCompanymen = _Mnemosyne_Recitat().companymen;
 
         const oldState = _getSingleCompanyman(sourceIdentifier, ss);
