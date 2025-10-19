@@ -135,6 +135,27 @@ class ThemisConfigModel:
                         "discordId": {"row": 1, "col": 1},
                         "LOAcheckbox": {"row": 1, "col": 2},
                     }
+                },
+                "BILLET_NCO_OFFSETS": {
+                    "offsets": {
+                        "rank": {"row": 0, "col": 0},
+                        "username": {"row": 0, "col": 1},
+                        "discordId": {"row": 0, "col": 4},
+                        "region": {"row": 0, "col": 5},
+                        "joinDate": {"row": 0, "col": 6},
+                        "LOAcheckbox": {"row": 0, "col": 7}
+                    }
+                },
+                "SQUAD_OFFSETS": {
+                    "offsets": {
+                        "rank": {"row": 0, "col": 0},
+                        "username": {"row": 0, "col": 1},
+                        "discordId": {"row": 0, "col": 4},
+                        "region": {"row": 0, "col": 5},
+                        "joinDate": {"row": 0, "col": 6},
+                        "LOAcheckbox": {"row": 0, "col": 7},
+                        "BTcheckbox": {"row": 0, "col": 8}
+                    }
                 }
             },
             "SLOT_BLUEPRINTS": {
@@ -1522,6 +1543,497 @@ class FieldsValidationWidget(QtWidgets.QWidget):
         QtWidgets.QMessageBox.information(self, "Saved", "Fields and validation updated.")
 
 
+@dataclass
+class ResolvedInstance:
+    sheet: str
+    row: int
+    col: int
+    layout: str
+    offsets: Dict[str, Any]
+    node_path_names: List[str]
+    node_ref: Dict[str, Any]
+    slot_ref: Dict[str, Any]
+    origin: str  # 'blueprint' or 'node'
+    origin_name: Optional[str]
+    slot_index: Optional[int]
+    coord_strategy: str  # 'locations'|'rows'|'range'|'row'
+    coord_index: Optional[int]
+    col_source: str  # 'loc'|'slot'|'node'
+
+
+class ConfigResolver:
+    def __init__(self, model: ThemisConfigModel):
+        self.model = model
+
+    @staticmethod
+    def _find_in_path(path: List[Dict[str, Any]], prop: str) -> Optional[Any]:
+        for i in range(len(path) - 1, -1, -1):
+            if prop in path[i]:
+                return path[i][prop]
+        return None
+
+    def _expand_slot(self, slot: Dict[str, Any], path: List[Dict[str, Any]], current_sheet: str, node: Dict[str, Any], origin: str, origin_name: Optional[str], slot_index: int) -> List[ResolvedInstance]:
+        results: List[ResolvedInstance] = []
+        layout = slot.get("layout") or self._find_in_path(path, "layout") or ""
+        offsets = self.model.data.get("LAYOUT_BLUEPRINTS", {}).get(layout, {}).get("offsets", {})
+        loc = slot.get("location", {}) or {}
+        node_loc = node.get("location", {}) or {}
+        if "col" in loc:
+            default_col = int(loc.get("col") or 1)
+            col_source = "slot"
+        elif "startCol" in node_loc:
+            default_col = int(node_loc.get("startCol") or 1)
+            col_source = "node"
+        else:
+            default_col = 1
+            col_source = "node"
+        sheet = loc.get("sheetName") or current_sheet or "Sheet1"
+
+        def make_instance(r: int, c: int, coord_strategy: str, coord_index: Optional[int], colsrc: str) -> ResolvedInstance:
+            return ResolvedInstance(
+                sheet=sheet,
+                row=int(r),
+                col=int(c),
+                layout=layout,
+                offsets=offsets,
+                node_path_names=[n.get("name", "") for n in path],
+                node_ref=node,
+                slot_ref=slot,
+                origin=origin,
+                origin_name=origin_name,
+                slot_index=slot_index,
+                coord_strategy=coord_strategy,
+                coord_index=coord_index,
+                col_source=colsrc,
+            )
+
+        if "locations" in slot:
+            for i, lc in enumerate(slot["locations"]):
+                rr = int(lc.get("row", 1))
+                cc = int(lc.get("col", default_col))
+                colsrc = "loc" if "col" in lc else ("slot" if "col" in loc else "node")
+                results.append(make_instance(rr, cc, "locations", i, colsrc))
+        elif "rows" in loc:
+            for i, rr in enumerate(loc["rows"]):
+                results.append(make_instance(int(rr), default_col, "rows", i, col_source))
+        elif "row" in loc:
+            results.append(make_instance(int(loc["row"]), default_col, "row", None, col_source))
+        elif "startRow" in loc and "endRow" in loc:
+            startR = int(loc["startRow"]) ; endR = int(loc["endRow"])
+            k = 0
+            for rr in range(startR, endR + 1):
+                results.append(make_instance(int(rr), default_col, "range", k, col_source))
+                k += 1
+        return results
+
+    def resolve_nodes(self, nodes: List[Dict[str, Any]]) -> List[ResolvedInstance]:
+        res: List[ResolvedInstance] = []
+
+        def visit(nodes_, path):
+            for node in nodes_:
+                path2 = path + [node]
+                current_sheet = self._find_in_path(path2, "sheetName")
+                # Node specific slots
+                for idx, s in enumerate(node.get("slots", []) or []):
+                    res.extend(self._expand_slot(s, path2, current_sheet, node, "node", None, idx))
+                # Blueprint slots
+                bp = node.get("useSlotsFrom")
+                if bp and bp in (self.model.data.get("SLOT_BLUEPRINTS", {}) or {}):
+                    for idx, s in enumerate(self.model.data["SLOT_BLUEPRINTS"][bp]):
+                        res.extend(self._expand_slot(s, path2, current_sheet, node, "blueprint", bp, idx))
+                # children
+                if node.get("children"):
+                    visit(node["children"], path2)
+        visit(nodes, [])
+        return res
+
+    def resolve(self) -> List[ResolvedInstance]:
+        return self.resolve_nodes(self.model.data.get("ORGANIZATION_HIERARCHY", []))
+
+    def sheets(self) -> List[str]:
+        return sorted({i.sheet for i in self.resolve()})
+
+    def instances_by_sheet(self, sheet: str, filter_node_path: Optional[str] = None) -> List[ResolvedInstance]:
+        insts = [i for i in self.resolve() if i.sheet == sheet]
+        if filter_node_path:
+            return [i for i in insts if ">".join(i.node_path_names) == filter_node_path]
+        return insts
+
+    def bounds_for_sheet(self, sheet: str, filter_node_path: Optional[str] = None) -> Tuple[int, int]:
+        insts = self.instances_by_sheet(sheet, filter_node_path)
+        max_row = 10
+        max_col = 10
+        for i in insts:
+            max_row = max(max_row, i.row)
+            max_col = max(max_col, i.col)
+            for off in (i.offsets or {}).values():
+                rr = i.row + int(off.get("row", 0))
+                cc = i.col + int(off.get("col", 0))
+                max_row = max(max_row, rr)
+                max_col = max(max_col, cc)
+        return max_row + 3, max_col + 3
+
+    def apply_move(self, instance: ResolvedInstance, new_row: int, new_col: Optional[int], prefer_slot_col_override: bool = False) -> None:
+        slot = instance.slot_ref
+        node = instance.node_ref
+        loc = slot.get("location", {}) or {}
+
+        # Row update
+        if instance.coord_strategy == "locations":
+            if "locations" in slot and instance.coord_index is not None:
+                slot["locations"][instance.coord_index]["row"] = int(new_row)
+                if new_col is not None:
+                    slot["locations"][instance.coord_index]["col"] = int(new_col)
+        elif instance.coord_strategy == "rows":
+            rows = loc.get("rows", [])
+            if instance.coord_index is not None and 0 <= instance.coord_index < len(rows):
+                rows[instance.coord_index] = int(new_row)
+            if new_col is not None:
+                if "col" in loc or prefer_slot_col_override or instance.col_source == "node":
+                    loc["col"] = int(new_col)
+                else:
+                    node.setdefault("location", {})["startCol"] = int(new_col)
+            slot["location"] = loc
+        elif instance.coord_strategy == "row":
+            loc["row"] = int(new_row)
+            if new_col is not None:
+                if "col" in loc or prefer_slot_col_override or instance.col_source == "node":
+                    loc["col"] = int(new_col)
+                else:
+                    node.setdefault("location", {})["startCol"] = int(new_col)
+            slot["location"] = loc
+        elif instance.coord_strategy == "range":
+            startR = int(loc.get("startRow", instance.row))
+            endR = int(loc.get("endRow", instance.row))
+            index = int(instance.coord_index or 0)
+            desired_start = int(new_row) - index
+            delta = desired_start - startR
+            loc["startRow"] = startR + delta
+            loc["endRow"] = endR + delta
+            if new_col is not None:
+                if "col" in loc or prefer_slot_col_override or instance.col_source == "node":
+                    loc["col"] = int(new_col)
+                else:
+                    node.setdefault("location", {})["startCol"] = int(new_col)
+            slot["location"] = loc
+
+    def detach_blueprint_for_node(self, node: Dict[str, Any]) -> bool:
+        bp_name = node.get("useSlotsFrom")
+        if not bp_name:
+            return False
+        slots = (self.model.data.get("SLOT_BLUEPRINTS", {}) or {}).get(bp_name)
+        if not slots:
+            return False
+        node["slots"] = [dict_deepcopy(s) for s in slots]
+        node.pop("useSlotsFrom", None)
+        return True
+
+
+class BlueprintPreviewWidget(QtWidgets.QWidget):
+    def __init__(self, model: ThemisConfigModel):
+        super().__init__()
+        self.model = model
+        self.resolver = ConfigResolver(self.model)
+        self.instances: List[ResolvedInstance] = []
+        self.anchor_map: Dict[Tuple[int, int], ResolvedInstance] = {}
+        self.selected: Optional[ResolvedInstance] = None
+        self._build_ui()
+        self._connect()
+        self.refresh()
+
+    def _build_ui(self):
+        layout = QtWidgets.QVBoxLayout(self)
+        top = QtWidgets.QHBoxLayout()
+        self.bp_combo = QtWidgets.QComboBox()
+        self.preview_start_col = QtWidgets.QSpinBox(); self.preview_start_col.setRange(1, 10000); self.preview_start_col.setValue(4)
+        self.preview_base_row = QtWidgets.QSpinBox(); self.preview_base_row.setRange(1, 10000); self.preview_base_row.setValue(5)
+        self.cellsize = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal); self.cellsize.setRange(16, 64); self.cellsize.setValue(26)
+        top.addWidget(QtWidgets.QLabel("Blueprint:"))
+        top.addWidget(self.bp_combo, 1)
+        top.addWidget(QtWidgets.QLabel("Start Col:"))
+        top.addWidget(self.preview_start_col)
+        top.addWidget(QtWidgets.QLabel("Cell Size"))
+        top.addWidget(self.cellsize)
+        layout.addLayout(top)
+
+        body = QtWidgets.QHBoxLayout()
+        self.grid = LayoutGrid(60, 40)
+        self.grid.enable_anchor_pick(True)
+        body.addWidget(self.grid, 3)
+
+        self.inspector = QtWidgets.QGroupBox("Selection")
+        form = QtWidgets.QFormLayout(self.inspector)
+        self.sel_info = QtWidgets.QLabel("(none)")
+        self.sel_row = QtWidgets.QSpinBox(); self.sel_row.setRange(1, 100000)
+        self.sel_col = QtWidgets.QSpinBox(); self.sel_col.setRange(1, 100000)
+        self.apply_btn = QtWidgets.QPushButton("Apply Move")
+        form.addRow("Info", self.sel_info)
+        form.addRow("Row", self.sel_row)
+        form.addRow("Col", self.sel_col)
+        form.addRow(self.apply_btn)
+        body.addWidget(self.inspector, 1)
+
+        layout.addLayout(body, 1)
+
+    def _connect(self):
+        self.bp_combo.currentTextChanged.connect(self.render)
+        self.preview_start_col.valueChanged.connect(self.render)
+        self.cellsize.valueChanged.connect(self._apply_zoom)
+        self.grid.anchorPicked.connect(self._on_pick)
+        self.apply_btn.clicked.connect(self._apply_move)
+
+    def refresh(self):
+        self.bp_combo.blockSignals(True)
+        self.bp_combo.clear()
+        for name in sorted(self.model.data.get("SLOT_BLUEPRINTS", {}).keys()):
+            self.bp_combo.addItem(name)
+        self.bp_combo.blockSignals(False)
+        if self.bp_combo.count() > 0:
+            self.bp_combo.setCurrentIndex(0)
+        self.render()
+
+    def _apply_zoom(self, v: int):
+        for r in range(self.grid.rowCount()):
+            self.grid.setRowHeight(r, v)
+        for c in range(self.grid.columnCount()):
+            self.grid.setColumnWidth(c, v * 2)
+
+    def _make_preview_node(self) -> Dict[str, Any]:
+        bp = self.bp_combo.currentText()
+        return {"name": "Preview", "sheetName": "Preview Sheet", "location": {"startCol": int(self.preview_start_col.value())}, "useSlotsFrom": bp}
+
+    def render(self):
+        if self.bp_combo.count() == 0:
+            return
+        node = self._make_preview_node()
+        self.instances = self.resolver.resolve_nodes([node])
+        # Build grid bounds from preview instances only
+        max_row, max_col = 10, 10
+        for inst in self.instances:
+            if inst.sheet != "Preview Sheet":
+                continue
+            max_row = max(max_row, inst.row)
+            max_col = max(max_col, inst.col)
+            for off in (inst.offsets or {}).values():
+                rr = inst.row + int(off.get("row", 0))
+                cc = inst.col + int(off.get("col", 0))
+                max_row = max(max_row, rr)
+                max_col = max(max_col, cc)
+        self.grid.setRowCount(max(max_row, 30))
+        self.grid.setColumnCount(max(max_col, 20))
+        self._apply_zoom(self.cellsize.value())
+        self.grid.clearContents()
+        self.anchor_map.clear()
+        # Place markers
+        for inst in self.instances:
+            if inst.sheet != "Preview Sheet":
+                continue
+            # Anchor
+            item = QtWidgets.QTableWidgetItem("A")
+            item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            item.setBackground(QtGui.QBrush(QtGui.QColor("#ffd966")))
+            self.grid.setItem(inst.row - 1, inst.col - 1, item)
+            self.anchor_map[(inst.row, inst.col)] = inst
+            # Fields
+            for key, off in (inst.offsets or {}).items():
+                rr = inst.row + int(off.get("row", 0))
+                cc = inst.col + int(off.get("col", 0))
+                if rr <= 0 or cc <= 0:
+                    continue
+                it = self.grid.item(rr - 1, cc - 1)
+                txt = key if it is None else f"{it.text()}\n{key}"
+                it2 = QtWidgets.QTableWidgetItem(txt)
+                it2.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                it2.setForeground(QtGui.QBrush(QtGui.QColor("#003366")))
+                it2.setBackground(QtGui.QBrush(QtGui.QColor("#cce5ff")))
+                self.grid.setItem(rr - 1, cc - 1, it2)
+
+    def _on_pick(self, row: int, col: int):
+        key = (row + 1, col + 1)
+        inst = self.anchor_map.get(key)
+        self.selected = inst
+        if inst:
+            self.sel_info.setText(f"{'>'.join(inst.node_path_names)} | {inst.origin} {inst.origin_name or ''}")
+            self.sel_row.setValue(inst.row)
+            self.sel_col.setValue(inst.col)
+        else:
+            self.sel_info.setText("(none)")
+
+    def _apply_move(self):
+        if not self.selected:
+            return
+        self.resolver.apply_move(self.selected, int(self.sel_row.value()), int(self.sel_col.value()), prefer_slot_col_override=True)
+        self.render()
+
+
+class SheetPreviewEditorWidget(QtWidgets.QWidget):
+    def __init__(self, model: ThemisConfigModel):
+        super().__init__()
+        self.model = model
+        self.resolver = ConfigResolver(self.model)
+        self.instances: List[ResolvedInstance] = []
+        self.anchor_map: Dict[Tuple[int, int], ResolvedInstance] = {}
+        self.selected: Optional[ResolvedInstance] = None
+        self._build_ui()
+        self._connect()
+        self.refresh()
+
+    def _build_ui(self):
+        layout = QtWidgets.QVBoxLayout(self)
+        top = QtWidgets.QHBoxLayout()
+        self.sheet_combo = QtWidgets.QComboBox()
+        self.node_filter = QtWidgets.QComboBox()
+        self.node_filter.addItem("(All)")
+        self.cellsize = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal); self.cellsize.setRange(16, 64); self.cellsize.setValue(24)
+        self.show_fields = QtWidgets.QCheckBox("Show field cells")
+        self.show_fields.setChecked(True)
+        self.pick_new_anchor = QtWidgets.QPushButton("Pick New Anchor")
+        self.pick_new_anchor.setCheckable(True)
+        self.prefer_slot_col = QtWidgets.QCheckBox("Prefer slot col override on edits")
+        top.addWidget(QtWidgets.QLabel("Sheet:"))
+        top.addWidget(self.sheet_combo)
+        top.addWidget(QtWidgets.QLabel("Section:"))
+        top.addWidget(self.node_filter)
+        top.addWidget(self.show_fields)
+        top.addWidget(QtWidgets.QLabel("Cell Size"))
+        top.addWidget(self.cellsize)
+        top.addWidget(self.pick_new_anchor)
+        top.addWidget(self.prefer_slot_col)
+        layout.addLayout(top)
+
+        body = QtWidgets.QHBoxLayout()
+        self.grid = LayoutGrid(120, 60)
+        body.addWidget(self.grid, 3)
+
+        self.inspector = QtWidgets.QGroupBox("Selection")
+        form = QtWidgets.QFormLayout(self.inspector)
+        self.sel_info = QtWidgets.QLabel("(none)")
+        self.sel_row = QtWidgets.QSpinBox(); self.sel_row.setRange(1, 99999)
+        self.sel_col = QtWidgets.QSpinBox(); self.sel_col.setRange(1, 99999)
+        self.apply_move_btn = QtWidgets.QPushButton("Apply Move")
+        self.detach_btn = QtWidgets.QPushButton("Detach blueprint for this node")
+        form.addRow("Info", self.sel_info)
+        form.addRow("Row", self.sel_row)
+        form.addRow("Col", self.sel_col)
+        form.addRow(self.apply_move_btn)
+        form.addRow(self.detach_btn)
+        body.addWidget(self.inspector, 1)
+
+        layout.addLayout(body, 1)
+
+    def _connect(self):
+        self.sheet_combo.currentTextChanged.connect(self._render)
+        self.node_filter.currentTextChanged.connect(self._render)
+        self.cellsize.valueChanged.connect(self._apply_zoom)
+        self.show_fields.toggled.connect(self._render)
+        self.pick_new_anchor.toggled.connect(self.grid.enable_anchor_pick)
+        self.grid.anchorPicked.connect(self._on_pick)
+        self.apply_move_btn.clicked.connect(self._apply_move)
+        self.detach_btn.clicked.connect(self._detach_blueprint)
+
+    def refresh(self):
+        # Refresh sheets and render
+        self.instances = self.resolver.resolve()
+        sheets = sorted({i.sheet for i in self.instances})
+        self.sheet_combo.blockSignals(True)
+        self.sheet_combo.clear()
+        for s in sheets:
+            self.sheet_combo.addItem(s)
+        self.sheet_combo.blockSignals(False)
+        if self.sheet_combo.count() > 0:
+            self.sheet_combo.setCurrentIndex(0)
+        self._render()
+
+    def _apply_zoom(self, v: int):
+        for r in range(self.grid.rowCount()):
+            self.grid.setRowHeight(r, v)
+        for c in range(self.grid.columnCount()):
+            self.grid.setColumnWidth(c, v * 2)
+
+    def _current_instances(self) -> List[ResolvedInstance]:
+        sheet = self.sheet_combo.currentText()
+        if not sheet:
+            return []
+        filter_path = None if self.node_filter.currentIndex() == 0 else self.node_filter.currentText()
+        return self.resolver.instances_by_sheet(sheet, filter_path)
+
+    def _render(self):
+        self.grid.clearContents()
+        self.anchor_map.clear()
+        sheet = self.sheet_combo.currentText()
+        if not sheet:
+            return
+        # Populate node filter
+        insts_all = [i for i in self.resolver.instances_by_sheet(sheet)]
+        paths = sorted({">".join(i.node_path_names) for i in insts_all})
+        self.node_filter.blockSignals(True)
+        self.node_filter.clear(); self.node_filter.addItem("(All)")
+        for p in paths:
+            self.node_filter.addItem(p)
+        self.node_filter.blockSignals(False)
+
+        # Bounds
+        max_row, max_col = self.resolver.bounds_for_sheet(sheet, None if self.node_filter.currentIndex() == 0 else self.node_filter.currentText())
+        self.grid.setRowCount(max(max_row, 40))
+        self.grid.setColumnCount(max(max_col, 20))
+        self._apply_zoom(self.cellsize.value())
+
+        # Draw
+        for inst in self._current_instances():
+            # Anchor
+            item = QtWidgets.QTableWidgetItem("A")
+            item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            item.setBackground(QtGui.QBrush(QtGui.QColor("#ffd966")))
+            self.grid.setItem(inst.row - 1, inst.col - 1, item)
+            self.anchor_map[(inst.row, inst.col)] = inst
+            # Fields
+            if self.show_fields.isChecked():
+                for key, off in (inst.offsets or {}).items():
+                    rr = inst.row + int(off.get("row", 0))
+                    cc = inst.col + int(off.get("col", 0))
+                    if rr <= 0 or cc <= 0:
+                        continue
+                    it = self.grid.item(rr - 1, cc - 1)
+                    txt = key if it is None else f"{it.text()}\n{key}"
+                    it2 = QtWidgets.QTableWidgetItem(txt)
+                    it2.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                    it2.setForeground(QtGui.QBrush(QtGui.QColor("#003366")))
+                    it2.setBackground(QtGui.QBrush(QtGui.QColor("#cce5ff")))
+                    self.grid.setItem(rr - 1, cc - 1, it2)
+
+    def _on_pick(self, row: int, col: int):
+        if self.pick_new_anchor.isChecked() and self.selected is not None:
+            # Move selected instance to this row/col
+            self.resolver.apply_move(self.selected, row + 1, col + 1, prefer_slot_col_override=self.prefer_slot_col.isChecked())
+            self.pick_new_anchor.setChecked(False)
+            self.refresh()
+            return
+        inst = self.anchor_map.get((row + 1, col + 1))
+        self.selected = inst
+        if inst:
+            self.sel_info.setText(f"{'>'.join(inst.node_path_names)} | {inst.origin} {inst.origin_name or ''}")
+            self.sel_row.setValue(inst.row)
+            self.sel_col.setValue(inst.col)
+        else:
+            self.sel_info.setText("(none)")
+
+    def _apply_move(self):
+        if not self.selected:
+            return
+        self.resolver.apply_move(self.selected, int(self.sel_row.value()), int(self.sel_col.value()), prefer_slot_col_override=self.prefer_slot_col.isChecked())
+        self.refresh()
+
+    def _detach_blueprint(self):
+        if not self.selected or self.selected.origin != "blueprint":
+            return
+        node = self.selected.node_ref
+        if self.resolver.detach_blueprint_for_node(node):
+            QtWidgets.QMessageBox.information(self, "Detached", "Blueprint was copied into this node's slots and detached.")
+            self.refresh()
+        else:
+            QtWidgets.QMessageBox.warning(self, "Unavailable", "Unable to detach blueprint for this node.")
+
+
 class PreviewExportWidget(QtWidgets.QWidget):
     def __init__(self, model: ThemisConfigModel):
         super().__init__()
@@ -1613,14 +2125,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.layout_designer = LayoutDesignerWidget(self.model)
         self.slot_blueprints = SlotBlueprintsWidget(self.model)
+        self.blueprint_preview = BlueprintPreviewWidget(self.model)
         self.org_editor = OrganizationEditorWidget(self.model)
+        self.sheet_preview = SheetPreviewEditorWidget(self.model)
         self.ranks_settings = RanksSettingsWidget(self.model)
         self.fields_validation = FieldsValidationWidget(self.model)
         self.preview_export = PreviewExportWidget(self.model)
 
         self.tabs.addTab(self.layout_designer, "Layout Designer")
         self.tabs.addTab(self.slot_blueprints, "Slot Blueprints")
+        self.tabs.addTab(self.blueprint_preview, "Blueprint Preview")
         self.tabs.addTab(self.org_editor, "Organization")
+        self.tabs.addTab(self.sheet_preview, "Sheet Preview & Editor")
         self.tabs.addTab(self.ranks_settings, "Ranks & Settings")
         self.tabs.addTab(self.fields_validation, "Fields & Validation")
         self.tabs.addTab(self.preview_export, "Preview & Export")
@@ -1657,7 +2173,9 @@ class MainWindow(QtWidgets.QMainWindow):
         for tab in [
             self.layout_designer,
             self.slot_blueprints,
+            self.blueprint_preview,
             self.org_editor,
+            self.sheet_preview,
             self.ranks_settings,
             self.fields_validation,
         ]:
@@ -1669,7 +2187,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def _refresh_all(self):
         self.layout_designer.refresh()
         self.slot_blueprints.refresh()
+        self.blueprint_preview.refresh()
         self.org_editor.refresh()
+        self.sheet_preview.refresh()
         self.ranks_settings.refresh()
         self.fields_validation.refresh()
         self.preview_export.refresh()
@@ -1678,6 +2198,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Update palette for potential new custom fields
         if self.tabs.widget(idx) is self.layout_designer:
             self.layout_designer.palette.refresh()
+        # Always refresh the export preview because model may have changed
         self.preview_export.refresh()
 
     def _new_project(self):
@@ -1691,13 +2212,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabs.clear()
         self.layout_designer = LayoutDesignerWidget(self.model)
         self.slot_blueprints = SlotBlueprintsWidget(self.model)
+        self.blueprint_preview = BlueprintPreviewWidget(self.model)
         self.org_editor = OrganizationEditorWidget(self.model)
+        self.sheet_preview = SheetPreviewEditorWidget(self.model)
         self.ranks_settings = RanksSettingsWidget(self.model)
         self.fields_validation = FieldsValidationWidget(self.model)
         self.preview_export = PreviewExportWidget(self.model)
         self.tabs.addTab(self.layout_designer, "Layout Designer")
         self.tabs.addTab(self.slot_blueprints, "Slot Blueprints")
+        self.tabs.addTab(self.blueprint_preview, "Blueprint Preview")
         self.tabs.addTab(self.org_editor, "Organization")
+        self.tabs.addTab(self.sheet_preview, "Sheet Preview & Editor")
         self.tabs.addTab(self.ranks_settings, "Ranks & Settings")
         self.tabs.addTab(self.fields_validation, "Fields & Validation")
         self.tabs.addTab(self.preview_export, "Preview & Export")
