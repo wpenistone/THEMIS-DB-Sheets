@@ -1355,7 +1355,6 @@ function Hermes_Expedit_Mandata() {
             if (!success) {
                 Logger.log("Webhook failed to send, re-queuing for a later attempt.");
                 queue.unshift(payload); 
-                
                 if (a_hasUrlFetchPermission === false) {
                     Logger.log("Permission error detected. Halting webhook processing for this run.");
                     break; 
@@ -2603,24 +2602,18 @@ function Hebe_Initiat(details, bypassConfirmation = false, grantAccess = false) 
             const recruitRankIndex = _getRankIndex(rank);
             const triggerRankIndex = _getRankIndex(triggerRank);
 
-            if (recruitRankIndex >= triggerRankIndex) {
-                if (!bypassConfirmation) {
-                    const ubtName = THEMIS_CONFIG.UBT_SETTINGS.NAME || 'Training';
-                    const promptTemplate = THEMIS_CONFIG.UBT_SETTINGS.PROMPT_MESSAGE || 'This recruitment rank requires the member to have passed {name}. Is this correct?';
-                    const message = promptTemplate.replace('{name}', ubtName);
-                    return { status: SCRIPT_STATUS.NEEDS_CONFIRMATION, message: message };
-                }
-                ubtStatus = true;
+            if (recruitRankIndex >= triggerRankIndex && !bypassConfirmation) {
+                const ubtName = THEMIS_CONFIG.UBT_SETTINGS.NAME || 'Training';
+                const promptTemplate = THEMIS_CONFIG.UBT_SETTINGS.PROMPT_MESSAGE || 'This recruitment rank requires the member to have passed {name}. Is this correct?';
+                return { status: SCRIPT_STATUS.NEEDS_CONFIRMATION, message: promptTemplate.replace('{name}', ubtName) };
             }
+            if (bypassConfirmation) ubtStatus = true;
         }
 
         const playerName = rawPlayerName.trim();
         const discordId = rawDiscordId.replace(/\D/g, '');
         const formattedJoinDate = getFormattedDateString(new Date());
         const { companymen: allCompanymen } = _Mnemosyne_Recitat();
-
-        let allRequests = [];
-        let newIdentifier;
 
         if (allCompanymen.some(p => p.player.toLowerCase() === playerName.toLowerCase())) {
             return { status: SCRIPT_STATUS.ERROR, message: `Player "${playerName}" already exists in the company.` };
@@ -2630,7 +2623,7 @@ function Hebe_Initiat(details, bypassConfirmation = false, grantAccess = false) 
         }
 
         const result = _findNodeAndPathByPathIdentifier(squad);
-        if (!result) return { status: SCRIPT_STATUS.ERROR, message: `Configuration error: Could not find section "${squad}".` };
+        if (!result) return { status: SCRIPT_STATUS.ERROR, message: `Config error: Could not find section "${squad}".` };
 
         const { node: targetNode, path: targetPath } = result;
         const slotBlueprintName = targetNode.useSlotsFrom || null;
@@ -2640,7 +2633,7 @@ function Hebe_Initiat(details, bypassConfirmation = false, grantAccess = false) 
         if (!rankSlot) return { status: SCRIPT_STATUS.ERROR, message: `No slots defined for rank ${rank} in ${squad}.` };
 
         const sheetName = rankSlot.location?.sheetName || _Maia_Investigat_Progeniem(targetPath, 'sheetName');
-        if (!sheetName) return { status: SCRIPT_STATUS.ERROR, message: `Configuration error: No sheet name defined for "${squad}".` };
+        if (!sheetName) return { status: SCRIPT_STATUS.ERROR, message: `Config error: No sheet name defined for "${squad}".` };
 
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         const spreadsheetId = ss.getId();
@@ -2648,48 +2641,72 @@ function Hebe_Initiat(details, bypassConfirmation = false, grantAccess = false) 
 
         const layoutName = rankSlot.layout || _Maia_Investigat_Progeniem(targetPath, 'layout');
         const layout = THEMIS_CONFIG.LAYOUT_BLUEPRINTS[layoutName];
-        if (!layout) return { status: SCRIPT_STATUS.ERROR, message: `Configuration error: No layout found for "${squad}".` };
+        if (!layout) return { status: SCRIPT_STATUS.ERROR, message: `Config error: No layout found for "${squad}".` };
 
-        const isMultiRankSortable = rankSlot.ranks && rankSlot.ranks.length > 1 && rankSlot.location?.startRow && rankSlot.location.endRow;
+        const hasMultipleSlots = rankSlot.count > 1 || (rankSlot.location?.rows && rankSlot.location.rows.length > 1) || (rankSlot.locations && rankSlot.locations.length > 1);
+        const isNowConsideredSortable = hasMultipleSlots || (rankSlot.ranks && rankSlot.ranks.length > 0);
 
-        if (isMultiRankSortable) {
-            const targetCol = targetNode.location?.startCol;
-            if (!targetCol) throw new Error(`Config error: Starting column required for sortable slots in "${squad}".`);
+        let allRequests = [];
+        let newIdentifier;
 
-            const slotStartRow = rankSlot.location.startRow;
-            const slotEndRow = rankSlot.location.endRow;
-            const slotCapacity = (slotEndRow - slotStartRow) + 1;
-            const membersInSlot = allCompanymen.filter(p => p.locationPath === squad && p.sheetName === sheetName && p.row >= slotStartRow && p.row <= slotEndRow);
-            if (membersInSlot.length >= slotCapacity) throw new Error(`No available slots for ${rank} in ${squad}.`);
+        const getAllPossibleCoords = (slot, node) => {
+            const coords = [];
+            const col = node.location?.startCol || slot.location?.col;
+            if (slot.locations) {
+                return slot.locations.map(loc => ({ row: loc.row, col: loc.col, sheet: slot.location?.sheetName || sheetName }));
+            }
+            if (slot.location?.rows) {
+                slot.location.rows.forEach(r => coords.push({ row: r, col: col, sheet: sheetName }));
+            } else if (slot.location?.startRow && slot.location?.endRow) {
+                for (let r = slot.location.startRow; r <= slot.location.endRow; r++) {
+                    coords.push({ row: r, col: col, sheet: sheetName });
+                }
+            } else if (slot.location?.row) {
+                coords.push({ row: slot.location.row, col: col, sheet: sheetName });
+            }
+            return coords;
+        };
+
+        if (isNowConsideredSortable) {
+            const possibleCoords = getAllPossibleCoords(rankSlot, targetNode);
+            if (possibleCoords.length === 0) throw new Error(`Config error: No locations defined for sortable slot in "${squad}".`);
+
+            const membersInSlot = allCompanymen.filter(p => {
+                return possibleCoords.some(coord => `${coord.sheet}|${coord.row}|${coord.col}` === p.sourceIdentifier);
+            });
+
+            if (membersInSlot.length >= possibleCoords.length) {
+                throw new Error(`No available slots for ${rank} in ${squad}.`);
+            }
 
             const newRecruitObject = { player: playerName, rank: rank, joinDate: formattedJoinDate, discordId: discordId, region: region, email: email || null, hasPassedUBT: ubtStatus, customFields: customFields || {} };
             const membersToSort = [...membersInSlot, newRecruitObject];
 
-            const { requests: writeRequests, newIdentifier: determinedIdentifier } = _Moirae_Pangunt_Fila({ sortedMembers: membersToSort, layout, targetCol, slotStartRow, slotCapacity }, sheetName, sheetId, true);
+            const { requests: writeRequests, newIdentifier: determinedIdentifier } = _Moirae_Pangunt_Fila({
+                sortedMembers: membersToSort,
+                layout: layout,
+                possibleCoords: possibleCoords,
+                sheetId: sheetId
+            }, true);
             allRequests.push(...writeRequests);
             newIdentifier = determinedIdentifier;
-        } else {
+
+        } else { 
             const occupiedSlots = new Set(allCompanymen.map(p => p.sourceIdentifier));
-            let targetLocation = null;
             const targetCol = targetNode.location?.startCol ?? rankSlot.location?.col;
             if (targetCol === undefined) throw new Error(`Config error: No starting column defined for "${squad}".`);
+            const targetRow = rankSlot.location.row;
+            if (!targetRow) throw new Error(`Config error: No row defined for single billet in "${squad}".`);
 
-            let allRows = [];
-            if (rankSlot.locations) allRows = rankSlot.locations.map(loc => loc.row);
-            else if (rankSlot.location?.rows) allRows = rankSlot.location.rows;
-            else if (rankSlot.location?.row) allRows.push(rankSlot.location.row);
-            else if (rankSlot.location?.startRow) for (let i = rankSlot.location.startRow; i <= rankSlot.location.endRow; i++) allRows.push(i);
+            if (occupiedSlots.has(`${sheetName}|${targetRow}|${targetCol}`)) {
+                 return { status: SCRIPT_STATUS.ERROR, message: `Slot for ${rank} in ${squad} is already filled.` };
+            }
 
-            const openRow = allRows.find(row => !occupiedSlots.has(`${sheetName}|${row}|${targetCol}`));
-            if (openRow === undefined) return { status: SCRIPT_STATUS.ERROR, message: `No available slots for ${rank} in ${squad}.` };
-
-            targetLocation = { row: openRow, col: targetCol };
             const newPersonData = { player: playerName, rank: rank, joinDate: formattedJoinDate, discordId: discordId, region: region, email: email || null, hasPassedUBT: ubtStatus, customFields: {} };
-
-            allRequests.push(..._getWriteSinglePersonRequests(newPersonData, targetLocation.row, targetLocation.col, layout, sheetId));
-            newIdentifier = { sourceIdentifier: `${sheetName}|${targetLocation.row}|${targetCol}` };
+            allRequests.push(..._getWriteSinglePersonRequests(newPersonData, targetRow, targetCol, layout, sheetId));
+            newIdentifier = { sourceIdentifier: `${sheetName}|${targetRow}|${targetCol}` };
         }
-        
+
         const logSheetName = THEMIS_CONFIG.RECRUITMENT_LOG_SHEET_NAME;
         const logSheet = ss.getSheetByName(logSheetName);
         if (logSheet) {
@@ -2698,7 +2715,7 @@ function Hebe_Initiat(details, bypassConfirmation = false, grantAccess = false) 
                 REGION: region, SQUAD: _getDisplaySectionName(squad), RECRUITER: recruiter,
                 RANK: rank, EMAIL: email || '', NOTE: note || ''
             };
-            
+
             const startRow = THEMIS_CONFIG.RECRUITMENT_LOG_START_ROW;
             const endRow = THEMIS_CONFIG.RECRUITMENT_LOG_END_ROW;
             const logColumns = THEMIS_CONFIG.RECRUITMENT_LOG_COLUMNS;
@@ -2708,7 +2725,7 @@ function Hebe_Initiat(details, bypassConfirmation = false, grantAccess = false) 
 
                 throw new Error("RECRUITMENT_LOG_END_ROW must be defined in Config.js for this feature to work.");
             }
-            
+
             const rangeToCheck = logSheet.getRange(startRow, checkColumn, endRow - startRow + 1, 1);
             const values = rangeToCheck.getValues();
 
@@ -2723,7 +2740,7 @@ function Hebe_Initiat(details, bypassConfirmation = false, grantAccess = false) 
             if (targetRowIndex === -1) {
                 throw new Error(`The Recruitment Logbook is full within the protected range (up to row ${endRow}). Please clear old entries or extend the range.`);
             }
-            
+
             const targetRow = startRow + targetRowIndex;
 
             const columnIndexes = Object.values(logColumns);
@@ -2739,52 +2756,36 @@ function Hebe_Initiat(details, bypassConfirmation = false, grantAccess = false) 
                     valuesToWrite[arrayIndex] = dataMap[key];
                 }
             }
-            
+
             const targetRange = logSheet.getRange(targetRow, minCol, 1, numCols);
             targetRange.setValues([valuesToWrite]);
         }
-
         if (allRequests.length > 0) {
             Sheets.Spreadsheets.batchUpdate({ requests: allRequests }, spreadsheetId);
         }
 
         const [newSheetName, rowStr, colStr] = newIdentifier.sourceIdentifier.split('|');
-
         invalidateSpecificSheetCaches([newSheetName, logSheetName]);
         _invalidateAggregateCaches();
 
-        const finalCustomFields = { ...(customFields || {}) };
-        const destinationTracksUbt = layout && layout.offsets && !!layout.offsets.BTcheckbox;
-
         const newPersonObject = {
-          player: playerName, rank: rank, locationPath: squad, location: squad.split('>').pop(),
-          joinDate: formattedJoinDate, email: email || null, discordId: discordId, region: region,
-          sourceIdentifier: newIdentifier.sourceIdentifier, sheetName: newSheetName, row: parseInt(rowStr),
-          startCol: parseInt(colStr),
-          hasPassedUBT: destinationTracksUbt ? ubtStatus : false,
-          onLOA: false, loaData: null,
-          loaNote: null, isHQ: layoutName === 'BILLET_OFFSETS', rankKey: rankTitle || null,
-          customFields: finalCustomFields
+            player: playerName, rank: rank, locationPath: squad, location: squad.split('>').pop(),
+            joinDate: formattedJoinDate, email: email || null, discordId: discordId, region: region,
+            sourceIdentifier: newIdentifier.sourceIdentifier, sheetName: newSheetName, row: parseInt(rowStr),
+            startCol: parseInt(colStr),
+            hasPassedUBT: layout?.offsets?.BTcheckbox ? ubtStatus : false,
+            onLOA: false, loaData: null,
+            loaNote: null, isHQ: layoutName === 'BILLET_OFFSETS', rankKey: rankTitle || null,
+            customFields: customFields || {}
         };
 
         const { availability: newAvailabilityMap } = _Mnemosyne_Recitat();
-
-        Aletheia_Testatur('Hebe_Initiat', 'Hebe_Initiat', {
-            user: getCurrentUserEmail(),
-            player: playerName, rank: rank, location: squad,
-            discordId: discordId, region: region, email: email,
-            customFields: finalCustomFields
-        });
-
+        Aletheia_Testatur('Hebe_Initiat', 'Hebe_Initiat', { user: getCurrentUserEmail(), player: playerName, rank: rank, location: squad, discordId: discordId, region: region, email: email });
         return {
             status: SCRIPT_STATUS.SUCCESS,
             message: `Successfully recruited ${playerName} as ${rank} in ${squad}.`,
-            deltaPayload: {
-                newlyCreated: [newPersonObject],
-                newAvailabilityMap: newAvailabilityMap
-            }
+            deltaPayload: { newlyCreated: [newPersonObject], newAvailabilityMap: newAvailabilityMap }
         };
-
     } catch (e) {
         Aletheia_Testatur('ERROR', 'Hebe_Initiat', { message: e.message, stack: e.stack, details: JSON.stringify(details) });
         _Lethe_Delet();
@@ -2834,11 +2835,11 @@ function _getWriteSinglePersonRequests(personData, targetRow, targetCol, layout,
                 break;
             case 'BTcheckbox':
                 const triggerRank = THEMIS_CONFIG.UBT_SETTINGS.TRIGGER_RANK;
-                
+
                 const shouldBeTicked = triggerRank 
                     ? (_getRankIndex(personData.rank) >= _getRankIndex(triggerRank)) 
                     : false;
-                
+
                 const finalBoolValue = personData.hasPassedUBT ?? shouldBeTicked;
 
                 cellData = { userEnteredValue: { boolValue: finalBoolValue } };
@@ -2883,19 +2884,20 @@ function _getWriteSinglePersonRequests(personData, targetRow, targetCol, layout,
     });
     return requests;
 }
-
-function _Moirae_Pangunt_Fila({ sortedMembers, layout, targetCol, slotStartRow, slotCapacity }, sheetName, sheetId, isRecruit = false) {
+function _Moirae_Pangunt_Fila({ sortedMembers, layout, possibleCoords, sheetId }, isRecruit = false) {
     const allRequests = [];
-    const sortedDataToWrite = _Dike_Ordinat_Socios(sortedMembers);
 
-    for (let i = 0; i < slotCapacity; i++) {
-        const rowToClear = slotStartRow + i;
-        allRequests.push(..._getClearSinglePersonRequests(rowToClear, targetCol, layout, sheetId));
+    for (const coord of possibleCoords) {
+
+        const currentSheetId = _getSheetId(SpreadsheetApp.getActiveSpreadsheet(), coord.sheet);
+        allRequests.push(..._getClearSinglePersonRequests(coord.row, coord.col, layout, currentSheetId));
     }
 
+    const sortedDataToWrite = _Dike_Ordinat_Socios(sortedMembers);
     sortedDataToWrite.forEach((member, index) => {
-        const targetRow = slotStartRow + index;
-        allRequests.push(..._getWriteSinglePersonRequests(member, targetRow, targetCol, layout, sheetId));
+        const targetCoord = possibleCoords[index];
+        const currentSheetId = _getSheetId(SpreadsheetApp.getActiveSpreadsheet(), targetCoord.sheet);
+        allRequests.push(..._getWriteSinglePersonRequests(member, targetCoord.row, targetCoord.col, layout, currentSheetId));
     });
 
     let newIdentifier = null;
@@ -2903,10 +2905,11 @@ function _Moirae_Pangunt_Fila({ sortedMembers, layout, targetCol, slotStartRow, 
         const recruitObject = sortedMembers.find(sm => !sm.sourceIdentifier);
         const newPersonIndex = recruitObject ? sortedDataToWrite.findIndex(m => m.player === recruitObject.player) : -1;
         if (newPersonIndex !== -1) {
-             const finalRow = slotStartRow + newPersonIndex;
-             newIdentifier = { sourceIdentifier: `${sheetName}|${finalRow}|${targetCol}` };
+            const finalCoord = possibleCoords[newPersonIndex];
+            newIdentifier = { sourceIdentifier: `${finalCoord.sheet}|${finalCoord.row}|${finalCoord.col}` };
         } else { 
-             newIdentifier = { sourceIdentifier: `${sheetName}|${slotStartRow}|${targetCol}` };
+            const finalCoord = possibleCoords[0];
+            newIdentifier = { sourceIdentifier: `${finalCoord.sheet}|${finalCoord.row}|${finalCoord.col}` };
         }
     }
 
@@ -2916,133 +2919,93 @@ function _Moirae_Pangunt_Fila({ sortedMembers, layout, targetCol, slotStartRow, 
 function _performMove(personDataToMove, sourceIdentifier, newLocationPath, newRankTitle, ss) {
     const spreadsheetId = ss.getId();
     const allCompanymen = _Mnemosyne_Recitat().companymen;
-    let allRequests = []; 
-    let newLocationDetails = {}; 
+    let allRequests = [];
+    let newLocationDetails = {};
+
+    const getAllPossibleCoords = (slot, node, defaultSheet) => {
+        const coords = [];
+        const col = node.location?.startCol || slot.location?.col;
+        const sheet = slot.location?.sheetName || defaultSheet;
+        if (slot.locations) { 
+            return slot.locations.map(loc => ({ row: loc.row, col: loc.col, sheet: sheet }));
+        }
+        if (slot.location?.rows) {
+            slot.location.rows.forEach(r => coords.push({ row: r, col: col, sheet: sheet }));
+        } else if (slot.location?.startRow && slot.location?.endRow) {
+            for (let r = slot.location.startRow; r <= slot.location.endRow; r++) {
+                coords.push({ row: r, col: col, sheet: sheet });
+            }
+        } else if (slot.location?.row) {
+            coords.push({ row: slot.location.row, col: col, sheet: sheet });
+        }
+        return coords;
+    };
 
     const destResult = _findNodeAndPathByPathIdentifier(newLocationPath);
     if (!destResult) throw new Error(`Config error: Could not find destination "${newLocationPath}".`);
 
     const { node: destNode, path: destPath } = destResult;
+    const destSheetName = _Maia_Investigat_Progeniem(destPath, 'sheetName');
     const destBlueprintName = destNode.useSlotsFrom || null;
     const destAvailableSlots = THEMIS_CONFIG.SLOT_BLUEPRINTS[destBlueprintName] || destNode.slots || [];
-    const destRankSlot = destAvailableSlots.find(s =>
-        (s.rank === personDataToMove.rank || (s.ranks && s.ranks.includes(personDataToMove.rank))) &&
-        (!newRankTitle || s.title === newRankTitle)
-    );
-    if (!destRankSlot) throw new Error(`No slots are configured for rank ${personDataToMove.rank} in ${destNode.name}.`);
+    const destSlot = destAvailableSlots.find(s => (s.rank === personDataToMove.rank || (s.ranks && s.ranks.includes(personDataToMove.rank))) && (!newRankTitle || s.title === newRankTitle));
 
-    const destParentSheet = destPath.slice(-2)[0]?.sheetName;
-    const destSheetName = destRankSlot.location?.sheetName || destNode.sheetName || destParentSheet;
-    const destLayoutName = destRankSlot.layout || destNode.layout || destPath.slice(-2)[0]?.layout; 
-    const destLayout = THEMIS_CONFIG.LAYOUT_BLUEPRINTS[destLayoutName]; 
+    if (!destSlot) throw new Error(`No slots configured for rank ${personDataToMove.rank} in ${destNode.name}.`);
+
+    const destLayoutName = destSlot.layout || _Maia_Investigat_Progeniem(destPath, 'layout');
+    const destLayout = THEMIS_CONFIG.LAYOUT_BLUEPRINTS[destLayoutName];
     const destSheetId = _getSheetId(ss, destSheetName);
 
-    const isDestSortable = destRankSlot.ranks && destRankSlot.ranks.length > 1 && destRankSlot.location?.startRow && destRankSlot.location.endRow;
+    const destPossibleCoords = getAllPossibleCoords(destSlot, destNode, destSheetName);
+    if (destPossibleCoords.length === 0) throw new Error(`Config error: No locations defined for destination slot in "${destNode.name}".`);
 
-    if (isDestSortable) {
-        const destSlotConfig = destRankSlot.location;
-        const destCol = destNode.location?.startCol;
-        if (!destCol) throw new Error(`Config error: Starting column required for sortable slots in "${destNode.name}".`);
+    const destMembersInSlot = allCompanymen.filter(p => destPossibleCoords.some(coord => `${coord.sheet}|${coord.row}|${coord.col}` === p.sourceIdentifier));
 
-        const slotCapacity = (destSlotConfig.endRow - destSlotConfig.startRow) + 1;
-        const membersInDestSlot = allCompanymen.filter(p => 
-            p.locationPath === newLocationPath &&
-            p.sheetName === destSheetName &&
-            p.row >= destSlotConfig.startRow &&
-            p.row <= destSlotConfig.endRow
-        );
-
-        if (membersInDestSlot.length >= slotCapacity) {
-            throw new Error(`No available slots for ${personDataToMove.rank} in ${destNode.name}. The section is full.`);
-        }
-        
-        const membersToSort = [...membersInDestSlot, personDataToMove];
-        const sortedFinalMembers = _Dike_Ordinat_Socios(membersToSort);
-
-        const { requests: writeRequests } = _Moirae_Pangunt_Fila({
-            sortedMembers: sortedFinalMembers,
-            layout: destLayout,
-            targetCol: destCol,
-            slotStartRow: destSlotConfig.startRow,
-            slotCapacity: slotCapacity
-        }, destSheetName, destSheetId, false);
-
-        allRequests.push(...writeRequests);
-
-        const newIndex = sortedFinalMembers.findIndex(p => p.player === personDataToMove.player);
-        newLocationDetails = {
-            newSheetName: destSheetName,
-            newRow: destSlotConfig.startRow + newIndex,
-            newCol: destCol
-        };
-
-    } else {
-        const occupiedSlots = new Set(allCompanymen.map(p => p.sourceIdentifier));
-        const allPossibleDestCoords = [];
-
-        if (destRankSlot.locations) { 
-            destRankSlot.locations.forEach(loc => allPossibleDestCoords.push({ row: loc.row, col: loc.col }));
-        } else if (destRankSlot.location) { 
-            const destCol = destNode.location?.startCol ?? destRankSlot.location?.col;
-            if (destCol === undefined) {
-                throw new Error(`Configuration error: No starting column defined for destination slot in "${destNode.name}".`);
-            }
-
-            const loc = destRankSlot.location;
-            if (loc.row) allPossibleDestCoords.push({ row: loc.row, col: destCol });
-            if (loc.rows) loc.rows.forEach(r => allPossibleDestCoords.push({ row: r, col: destCol }));
-            if (loc.startRow && loc.endRow) {
-                for (let i = loc.startRow; i <= loc.endRow; i++) {
-                     allPossibleDestCoords.push({ row: i, col: destCol });
-                }
-            }
-        }
-
-        const targetLocation = allPossibleDestCoords.find(coords => 
-            !occupiedSlots.has(`${destSheetName}|${coords.row}|${coords.col}`)
-        );
-
-        if (!targetLocation) throw new Error(`No available slots for ${personDataToMove.rank} in ${destNode.name}. The section is full.`);
-
-        allRequests.push(..._getWriteSinglePersonRequests(personDataToMove, targetLocation.row, targetLocation.col, destLayout, destSheetId));
-        
-        newLocationDetails = { 
-            newSheetName: destSheetName, 
-            newRow: targetLocation.row, 
-            newCol: targetLocation.col 
-        };
+    if (destMembersInSlot.length >= destPossibleCoords.length) {
+        throw new Error(`No available slots for ${personDataToMove.rank} in ${destNode.name}. The section is full.`);
     }
+
+    const destMembersToSort = [...destMembersInSlot, personDataToMove];
+    const { requests: writeRequests } = _Moirae_Pangunt_Fila({
+        sortedMembers: destMembersToSort,
+        layout: destLayout,
+        possibleCoords: destPossibleCoords,
+        sheetId: destSheetId
+    });
+    allRequests.push(...writeRequests);
+
+    const sortedFinalMembers = _Dike_Ordinat_Socios(destMembersToSort);
+    const newIndex = sortedFinalMembers.findIndex(p => p.player === personDataToMove.player);
+    const newCoord = destPossibleCoords[newIndex];
+    newLocationDetails = { newSheetName: newCoord.sheet, newRow: newCoord.row, newCol: newCoord.col };
 
     const sourceConfig = _findNodeBySourceIdentifier(sourceIdentifier);
     if (!sourceConfig) throw new Error(`Could not find config for source: ${sourceIdentifier}.`);
 
-    const sourceSheetId = _getSheetId(ss, sourceConfig.sheetName);
-    const sourceLayout = THEMIS_CONFIG.LAYOUT_BLUEPRINTS[sourceConfig.slot.layout || sourceConfig.node.layout || (sourceConfig.parentNode ? sourceConfig.parentNode.layout : null)];
-    if (!sourceLayout) throw new Error(`Config error: Could not find layout for source member's slot.`);
+    const sourceSheetName = sourceConfig.sheetName;
+    const sourceSheetId = _getSheetId(ss, sourceSheetName);
+    const sourceLayout = _Themis_Praescribit_Legem(sourceConfig);
+    const sourcePossibleCoords = getAllPossibleCoords(sourceConfig.slot, sourceConfig.node, sourceSheetName);
 
-    const isSourceSortable = sourceConfig.slot.location?.startRow && sourceConfig.slot.location?.endRow;
+    const hasMultipleSourceSlots = sourceConfig.slot.count > 1 || (sourceConfig.slot.location?.rows && sourceConfig.slot.location.rows.length > 1) || (sourceConfig.slot.locations && sourceConfig.slot.locations.length > 1);
+    const sourceIsSortable = hasMultipleSourceSlots || (sourceConfig.slot.ranks && sourceConfig.slot.ranks.length > 0);
 
-    if (isSourceSortable) {  
-        const slotConfig = sourceConfig.slot.location;
-        const remainingMembers = allCompanymen.filter(p => 
-            p.sourceIdentifier !== sourceIdentifier && 
-            p.locationPath === sourceConfig.path &&
-            p.row >= slotConfig.startRow &&
-            p.row <= slotConfig.endRow
+    if (sourceIsSortable) {
+        const remainingMembers = allCompanymen.filter(p =>
+            p.sourceIdentifier !== sourceIdentifier &&
+            sourcePossibleCoords.some(coord => `${coord.sheet}|${coord.row}|${coord.col}` === p.sourceIdentifier)
         );
-
         const { requests: resortRequests } = _Moirae_Pangunt_Fila({
             sortedMembers: remainingMembers,
             layout: sourceLayout,
-            targetCol: sourceConfig.node.location.startCol,
-            slotStartRow: slotConfig.startRow,
-            slotCapacity: (slotConfig.endRow - slotConfig.startRow) + 1
-        }, sourceConfig.sheetName, sourceSheetId, false);
+            possibleCoords: sourcePossibleCoords,
+            sheetId: sourceSheetId
+        });
         allRequests.push(...resortRequests);
     } else { 
         const sourceRow = parseInt(sourceIdentifier.split('|')[1]);
         const sourceCol = parseInt(sourceIdentifier.split('|')[2]);
-        allRequests.push(..._getClearSinglePersonRequests(sourceRow, sourceCol, sourceLayout, sourceSheetId));
+        allRequests.push(..._getClearSinglePersonRequests(sourceRow, sourceCol, sourceLayout, sourceSheetId, sourceConfig.slot));
     }
 
     if (allRequests.length > 0) {
@@ -3051,7 +3014,7 @@ function _performMove(personDataToMove, sourceIdentifier, newLocationPath, newRa
     }
 
     updateLastModifiedTimestamp();
-    return newLocationDetails; 
+    return newLocationDetails;
 }
 
 function _getClearSinglePersonRequests(row, col, layout, sheetId, slotConfig = null) {
@@ -3111,6 +3074,7 @@ function _getHighestApplicableTir(rankName) {
     }
     return null;
 }
+
 function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email = null, rankTitle = null, grantAccess = false) {
     const lock = LockService.getScriptLock();
     if (!lock.tryLock(THEMIS_CONFIG.LOCK_TIMEOUT_MS)) {
@@ -3119,38 +3083,27 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
 
     try {
         const ss = SpreadsheetApp.getActiveSpreadsheet();
-
         if (grantAccess && email) {
-            try {
-                ss.addEditor(email);
-            } catch (e) {
-                Aletheia_Testatur('ERROR', 'Dike_Iudicat_addEditor', { message: `Failed to grant editor access to ${email}, but the promotion/update will proceed. Error: ${e.message}`, user: getCurrentUserEmail() });
+            try { ss.addEditor(email); } catch (e) {
+                Aletheia_Testatur('ERROR', 'Dike_Iudicat_addEditor', { message: `Failed to grant editor access for ${email}. Error: ${e.message}`, user: getCurrentUserEmail() });
             }
         }
 
         const allCompanymen = _Mnemosyne_Recitat().companymen;
-
         const oldState = _getSingleCompanyman(sourceIdentifier, ss);
-        if (!oldState) {
-            return { status: SCRIPT_STATUS.ERROR, message: "Could not find the person to update. Please refresh and try again." };
-        }
-        
+        if (!oldState) return { status: SCRIPT_STATUS.ERROR, message: "Could not find the person to update. Please refresh." };
+
         _Nemesis_Verificat(oldState, ss);
-        
+
         const oldRankIndex = _getRankIndex(oldState.rank);
         const newRankIndex = _getRankIndex(newRank);
         const isPromotion = newRankIndex > oldRankIndex;
 
-        const personDataToMove = { ...oldState }; 
-        personDataToMove.rank = newRank;
-        if (email !== null) {
-            personDataToMove.email = email;
-        }
-
+        const personDataToMove = { ...oldState, rank: newRank };
+        if (email !== null) personDataToMove.email = email;
         if (_isEmailRequiredForRank(newRank) && !personDataToMove.email) {
-            return { status: SCRIPT_STATUS.ERROR, message: `An email is required for the rank of ${newRank}, but none was provided.` };
+            return { status: SCRIPT_STATUS.ERROR, message: `Email required for ${newRank}.` };
         }
-
 
         const destResult = _findNodeAndPathByPathIdentifier(newLocation);
         if (!destResult) throw new Error(`Config error: Could not find destination "${newLocation}".`);
@@ -3160,45 +3113,27 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
         const destSlot = destAvailableSlots.find(s => (s.rank === newRank || (s.ranks && s.ranks.includes(newRank))) && (!rankTitle || s.title === rankTitle));
         if (!destSlot) throw new Error(`No slot found for rank ${newRank} in ${newLocation}.`);
 
-        const destLayoutName = destSlot.layout || destNode.layout || destPath.slice(-2)[0]?.layout;
+        const destLayoutName = destSlot.layout || _Maia_Investigat_Progeniem(destPath, 'layout');
         const destLayout = THEMIS_CONFIG.LAYOUT_BLUEPRINTS[destLayoutName];
         const destLayoutOffsets = destLayout.offsets || {};
         const destinationTracksUbt = !!destLayoutOffsets.BTcheckbox;
 
         let ubtStatus = oldState.hasPassedUBT;
-
-
         if (isPromotion) {
             const triggerRank = THEMIS_CONFIG.UBT_SETTINGS.TRIGGER_RANK;
             if (triggerRank) {
                 const triggerRankIndex = _getRankIndex(triggerRank);
-
-                const isPromotionAcrossThreshold = oldRankIndex < triggerRankIndex && newRankIndex >= triggerRankIndex;
-
-                const isCorrectiveUbtCheck = destinationTracksUbt && newRankIndex >= triggerRankIndex && !oldState.hasPassedUBT;
-
-                if (isPromotionAcrossThreshold || isCorrectiveUbtCheck) {
-                    if (!ubtApproved) {
-                        const ubtName = THEMIS_CONFIG.UBT_SETTINGS.NAME || 'Training';
-                        const promptTemplate = THEMIS_CONFIG.UBT_SETTINGS.PROMPT_MESSAGE || 'This promotion requires the member to be {name} passed. Is this correct?';
-                        const message = promptTemplate.replace('{name}', ubtName);
-                        return { status: SCRIPT_STATUS.NEEDS_CONFIRMATION, message: message };
-                    }
-                    ubtStatus = true;
+                const isAcrossThreshold = oldRankIndex < triggerRankIndex && newRankIndex >= triggerRankIndex;
+                if (isAcrossThreshold && !ubtApproved) {
+                     return { status: SCRIPT_STATUS.NEEDS_CONFIRMATION, message: (THEMIS_CONFIG.UBT_SETTINGS.PROMPT_MESSAGE || '').replace('{name}', THEMIS_CONFIG.UBT_SETTINGS.NAME) };
                 }
+                if (ubtApproved) ubtStatus = true;
             }
         }
+        personDataToMove.hasPassedUBT = destinationTracksUbt ? ubtStatus : false;
 
-        personDataToMove.hasPassedUBT = ubtStatus;
+        if (!_isEmailRequiredForRank(newRank)) personDataToMove.email = "";
 
-        if (!destinationTracksUbt) {
-            personDataToMove.hasPassedUBT = false;
-        }
-        
-        if (!_isEmailRequiredForRank(newRank)) {
-            personDataToMove.email = "";
-        }
-        
         if (personDataToMove.customFields && THEMIS_CONFIG.CUSTOM_FIELDS) {
             const newCustomFields = {};
             THEMIS_CONFIG.CUSTOM_FIELDS.forEach(field => {
@@ -3210,82 +3145,62 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
         }
 
         const sourceConfig = _findNodeBySourceIdentifier(sourceIdentifier);
-        if (!sourceConfig) throw new Error(`Configuration error for source member at ${sourceIdentifier}.`);
+        if (!sourceConfig) throw new Error(`Config error for source member.`);
 
-        const affectedSlots = new Map();
-        const sourceIsSortable = sourceConfig.slot.ranks && sourceConfig.slot.ranks.length > 1 && sourceConfig.slot.location?.startRow;
-        if (sourceIsSortable) {
-            affectedSlots.set(oldState.locationPath, {
-                locationPath: oldState.locationPath,
-                sheetName: oldState.sheetName,
-                startRow: sourceConfig.slot.location.startRow,
-                endRow: sourceConfig.slot.location.endRow
-            });
-        }
+        const isSlotSortable = (slot) => {
+            if (!slot) return false;
+            const hasMultiple = slot.count > 1 || (slot.location?.rows && slot.location.rows.length > 1) || (slot.locations && slot.locations.length > 1);
+            return hasMultiple || (slot.ranks && slot.ranks.length > 0);
+        };
 
-        const destIsSortable = destSlot.ranks && destSlot.ranks.length > 1 && destSlot.location?.startRow;
-        if (destIsSortable) {
-             const destSheetName = destSlot.location?.sheetName || destNode.sheetName || destPath.slice(-2)[0]?.sheetName;
-             affectedSlots.set(newLocation, {
-                locationPath: newLocation,
-                sheetName: destSheetName,
-                startRow: destSlot.location.startRow,
-                endRow: destSlot.location.endRow
-            });
-        }
+        const sourceIsSortable = isSlotSortable(sourceConfig.slot);
 
         let finalUpdatedPersons = [];
-        let sortedMembers = [];
         let finalSheetNamesToInvalidate = new Set([oldState.sheetName]);
 
-        if (sourceIsSortable && oldState.locationPath === newLocation && sourceConfig.slot.ranks && sourceConfig.slot.ranks.includes(newRank)) {
-            const slotConfig = sourceConfig.slot.location;
-            const sourceLayout = _Themis_Praescribit_Legem(sourceConfig);
-            const sourceSheetName = sourceConfig.sheetName;
-            const sourceSheetId = _getSheetId(ss, sourceSheetName);
+        if (sourceIsSortable && oldState.locationPath === newLocation && (destSlot === sourceConfig.slot)) {
+            const getAllPossibleCoords = (slot, node, defaultSheet) => {
+                const coords = [];
+                const col = node.location?.startCol || slot.location?.col;
+                const sheet = slot.location?.sheetName || defaultSheet;
+                if (slot.locations) return slot.locations.map(loc => ({ row: loc.row, col: loc.col, sheet: sheet }));
+                if (slot.location?.rows) slot.location.rows.forEach(r => coords.push({ row: r, col: col, sheet: sheet }));
+                else if (slot.location?.startRow && slot.location?.endRow) {
+                    for (let r = slot.location.startRow; r <= slot.location.endRow; r++) coords.push({ row: r, col: col, sheet: sheet });
+                }
+                return coords;
+            };
 
-            const membersInSlot = allCompanymen.filter(p =>
-                p.locationPath === oldState.locationPath &&
-                p.sheetName === sourceSheetName &&
-                p.row >= slotConfig.startRow &&
-                p.row <= slotConfig.endRow
-            );
+            const possibleCoords = getAllPossibleCoords(sourceConfig.slot, sourceConfig.node, sourceConfig.sheetName);
+            const membersInSlot = allCompanymen.filter(p => possibleCoords.some(coord => `${coord.sheet}|${coord.row}|${coord.col}` === p.sourceIdentifier));
 
             const personToUpdateIndex = membersInSlot.findIndex(p => p.sourceIdentifier === sourceIdentifier);
             if (personToUpdateIndex > -1) {
-                membersInSlot[personToUpdateIndex].rank = newRank;
-                membersInSlot[personToUpdateIndex].email = personDataToMove.email;
-                membersInSlot[personToUpdateIndex].hasPassedUBT = personDataToMove.hasPassedUBT;
-                membersInSlot[personToUpdateIndex].customFields = personDataToMove.customFields;
+                membersInSlot[personToUpdateIndex] = { ...membersInSlot[personToUpdateIndex], ...personDataToMove };
             } else {
-                throw new Error("Cache desync: Could not find person to promote within their own slot.");
+                throw new Error("Cache desync: Could not find person to update within their own slot.");
             }
 
-            sortedMembers = _Dike_Ordinat_Socios(membersInSlot);
-            finalUpdatedPersons = sortedMembers;
-
             const { requests: resortRequests } = _Moirae_Pangunt_Fila({
-                sortedMembers: sortedMembers,
-                layout: sourceLayout,
-                targetCol: sourceConfig.node.location.startCol,
-                slotStartRow: slotConfig.startRow,
-                slotCapacity: (slotConfig.endRow - slotConfig.startRow) + 1
-            }, sourceSheetName, sourceSheetId, false);
+                sortedMembers: membersInSlot,
+                layout: _Themis_Praescribit_Legem(sourceConfig),
+                possibleCoords: possibleCoords,
+                sheetId: _getSheetId(ss, sourceConfig.sheetName)
+            });
 
             if (resortRequests.length > 0) {
                 Sheets.Spreadsheets.batchUpdate({ requests: resortRequests }, ss.getId());
                 Utilities.sleep(1500);
                 updateLastModifiedTimestamp();
             }
+            finalUpdatedPersons = _Dike_Ordinat_Socios(membersInSlot);
+
         } else {
             const newLocationDetails = _performMove(personDataToMove, sourceIdentifier, newLocation, rankTitle, ss);
             finalSheetNamesToInvalidate.add(newLocationDetails.newSheetName);
 
             const newSourceIdentifier = `${newLocationDetails.newSheetName}|${newLocationDetails.newRow}|${newLocationDetails.newCol}`;
-            personDataToMove.sourceIdentifier = newSourceIdentifier;
-            personDataToMove.row = newLocationDetails.newRow;
-            personDataToMove.startCol = newLocationDetails.newCol;
-            finalUpdatedPersons.push(personDataToMove);
+            finalUpdatedPersons.push({ ...personDataToMove, sourceIdentifier: newSourceIdentifier, row: newLocationDetails.newRow, startCol: newLocationDetails.newCol });
         }
 
         invalidateSpecificSheetCaches([...finalSheetNamesToInvalidate]);
@@ -3293,27 +3208,15 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
 
         const { availability: newAvailabilityMap } = _Mnemosyne_Recitat();
         const newState = _Mnemosyne_Recitat().companymen.find(p => p.player === oldState.player);
+        if (!newState) throw new Error(`Validation failed: Could not find ${oldState.player} after update.`);
 
-        if (!newState) {
-          throw new Error(`Validation pre-check failed: Could not find ${oldState.player} after the update operation.`);
-        }
-
-        Aletheia_Testatur('MEMBER_UPDATE', 'Dike_Iudicat', {
-            user: getCurrentUserEmail(),
-            oldState: oldState,
-            newState: newState
-        });
-        
+        Aletheia_Testatur('MEMBER_UPDATE', 'Dike_Iudicat', { user: getCurrentUserEmail(), oldState: oldState, newState: newState });
 
         return {
             status: SCRIPT_STATUS.SUCCESS,
             message: _Peitho_Suadet(oldState.player, oldState.rank, newRank, oldState.location, newLocation.split('>').pop()),
-            deltaPayload: {
-                updatedPersons: finalUpdatedPersons,
-                newAvailabilityMap: newAvailabilityMap
-            }
+            deltaPayload: { updatedPersons: finalUpdatedPersons, newAvailabilityMap: newAvailabilityMap }
         };
-
     } catch (e) {
         _Lethe_Delet();
         return handleError('Dike_Iudicat', e, getCurrentUserEmail());
@@ -3347,34 +3250,47 @@ function Atropos_Secat(sourceIdentifier, revokeAccess = false) {
 
         const config = _findNodeBySourceIdentifier(sourceIdentifier);
         const sourceLayout = _Themis_Praescribit_Legem(config);
+        const sourceSheetName = config.sheetName;
+        const sourceSheetId = _getSheetId(ss, sourceSheetName);
 
         let allRequests = [];
         let sortedAndUpdatedMembers = [];
-        const isMultiRankSortable = config.slot.ranks && config.slot.ranks.length > 1 && config.slot.location?.startRow && config.slot.location?.endRow;
 
-        if (isMultiRankSortable) {
-            const slotConfig = config.slot.location;
+        const slot = config.slot;
+        const hasMultipleSlots = slot.count > 1 || (slot.location?.rows && slot.location.rows.length > 1) || (slot.locations && slot.locations.length > 1);
+        const isNowConsideredSortable = hasMultipleSlots || (slot.ranks && slot.ranks.length > 0);
+
+        const getAllPossibleCoords = (slot, node, defaultSheet) => {
+            const coords = [];
+            const col = node.location?.startCol || slot.location?.col;
+            const sheet = slot.location?.sheetName || defaultSheet;
+            if (slot.locations) return slot.locations.map(loc => ({ row: loc.row, col: loc.col, sheet: sheet }));
+            if (slot.location?.rows) slot.location.rows.forEach(r => coords.push({ row: r, col: col, sheet: sheet }));
+            else if (slot.location?.startRow && slot.location?.endRow) {
+                for (let r = slot.location.startRow; r <= slot.location.endRow; r++) coords.push({ row: r, col: col, sheet: sheet });
+            }
+            return coords;
+        };
+
+        if (isNowConsideredSortable) {
+            const possibleCoords = getAllPossibleCoords(slot, config.node, sourceSheetName);
             const remainingMembers = allCompanymen.filter(p =>
                 p.sourceIdentifier !== source.sourceIdentifier &&
-                p.locationPath === source.locationPath &&
-                p.sheetName === source.sheetName &&
-                p.row >= slotConfig.startRow &&
-                p.row <= slotConfig.endRow
+                possibleCoords.some(coord => `${coord.sheet}|${coord.row}|${coord.col}` === p.sourceIdentifier)
             );
 
+            const { requests: resortRequests } = _Moirae_Pangunt_Fila({ sortedMembers: remainingMembers, layout: sourceLayout, possibleCoords: possibleCoords, sheetId: sourceSheetId });
+            allRequests.push(...resortRequests);
+
             sortedAndUpdatedMembers = _Dike_Ordinat_Socios(remainingMembers).map((member, index) => {
-                const newRow = slotConfig.startRow + index;
-                return {
-                    ...member,
-                    row: newRow,
-                    sourceIdentifier: `${source.sheetName}|${newRow}|${config.node.location.startCol}`
-                };
+                const newCoord = possibleCoords[index];
+                return { ...member, row: newCoord.row, startCol: newCoord.col, sourceIdentifier: `${newCoord.sheet}|${newCoord.row}|${newCoord.col}` };
             });
 
-            const { requests: resortRequests } = _Moirae_Pangunt_Fila({ sortedMembers: sortedAndUpdatedMembers, layout: sourceLayout, targetCol: config.node.location.startCol, slotStartRow: slotConfig.startRow, slotCapacity: slotConfig.endRow - slotConfig.startRow + 1 }, source.sheetName, _getSheetId(ss, source.sheetName), false);
-            allRequests.push(...resortRequests);
         } else {
-            allRequests.push(..._getClearSinglePersonRequests(source.row, source.startCol, sourceLayout, _getSheetId(ss, source.sheetName), config.slot));
+            const sourceRow = parseInt(sourceIdentifier.split('|')[1]);
+            const sourceCol = parseInt(sourceIdentifier.split('|')[2]);
+            allRequests.push(..._getClearSinglePersonRequests(sourceRow, sourceCol, sourceLayout, sourceSheetId, config.slot));
         }
 
         if (allRequests.length > 0) {
@@ -3387,10 +3303,7 @@ function Atropos_Secat(sourceIdentifier, revokeAccess = false) {
 
         const { availability: newAvailabilityMap } = _Mnemosyne_Recitat();
 
-        Aletheia_Testatur('Atropos_Secat', 'Atropos_Secat', {
-            user: getCurrentUserEmail(),
-            deletedMember: source
-        });
+        Aletheia_Testatur('Atropos_Secat', 'Atropos_Secat', { user: getCurrentUserEmail(), deletedMember: source });
 
         return {
             status: SCRIPT_STATUS.SUCCESS,
