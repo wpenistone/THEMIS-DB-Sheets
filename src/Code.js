@@ -3345,7 +3345,7 @@ function Atropos_Secat(sourceIdentifier, revokeAccess = false) {
         const sourceLayout = _Themis_Praescribit_Legem(config);
 
         let allRequests = [];
-        let resortedMembers = [];
+        let sortedAndUpdatedMembers = []; 
         const isMultiRankSortable = config.slot.ranks && config.slot.ranks.length > 1 && config.slot.location?.startRow && config.slot.location?.endRow;
 
         if (isMultiRankSortable) {
@@ -3358,9 +3358,16 @@ function Atropos_Secat(sourceIdentifier, revokeAccess = false) {
                 p.row <= slotConfig.endRow
             );
 
-            resortedMembers = _Dike_Ordinat_Socios(remainingMembers);
+            sortedAndUpdatedMembers = _Dike_Ordinat_Socios(remainingMembers).map((member, index) => {
+                const newRow = slotConfig.startRow + index;
+                return {
+                    ...member,
+                    row: newRow,
+                    sourceIdentifier: `${source.sheetName}|${newRow}|${config.node.location.startCol}`
+                };
+            });
 
-            const { requests: resortRequests } = _Moirae_Pangunt_Fila({ sortedMembers: resortedMembers, layout: sourceLayout, targetCol: config.node.location.startCol, slotStartRow: slotConfig.startRow, slotCapacity: slotConfig.endRow - slotConfig.startRow + 1 }, source.sheetName, _getSheetId(ss, source.sheetName), false);
+            const { requests: resortRequests } = _Moirae_Pangunt_Fila({ sortedMembers: sortedAndUpdatedMembers, layout: sourceLayout, targetCol: config.node.location.startCol, slotStartRow: slotConfig.startRow, slotCapacity: slotConfig.endRow - slotConfig.startRow + 1 }, source.sheetName, _getSheetId(ss, source.sheetName), false);
             allRequests.push(...resortRequests);
         } else {
             allRequests.push(..._getClearSinglePersonRequests(source.row, source.startCol, sourceLayout, _getSheetId(ss, source.sheetName)));
@@ -3386,7 +3393,7 @@ function Atropos_Secat(sourceIdentifier, revokeAccess = false) {
             message: `Successfully deleted ${source.player}.`,
             deltaPayload: {
                 deletedIdentifier: sourceIdentifier,
-                updatedPersons: resortedMembers,
+                updatedPersons: sortedAndUpdatedMembers, 
                 newAvailabilityMap: newAvailabilityMap
             }
         };
