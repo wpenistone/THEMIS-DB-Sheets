@@ -3054,7 +3054,7 @@ function _performMove(personDataToMove, sourceIdentifier, newLocationPath, newRa
     return newLocationDetails; 
 }
 
-function _getClearSinglePersonRequests(row, col, layout, sheetId) {
+function _getClearSinglePersonRequests(row, col, layout, sheetId, slotConfig = null) {
     const requests = [];
     const offsets = layout.offsets;
     const allOffsetKeys = [...new Set([
@@ -3063,6 +3063,10 @@ function _getClearSinglePersonRequests(row, col, layout, sheetId) {
     ])];
 
     allOffsetKeys.forEach(key => {
+        if (key === 'rank' && slotConfig && slotConfig.rank) {
+            return; 
+        }
+
         const offset = offsets[key];
         if (offset) {
             const isCheckbox = key === 'LOAcheckbox' || key === 'BTcheckbox';
@@ -3345,7 +3349,7 @@ function Atropos_Secat(sourceIdentifier, revokeAccess = false) {
         const sourceLayout = _Themis_Praescribit_Legem(config);
 
         let allRequests = [];
-        let sortedAndUpdatedMembers = []; 
+        let sortedAndUpdatedMembers = [];
         const isMultiRankSortable = config.slot.ranks && config.slot.ranks.length > 1 && config.slot.location?.startRow && config.slot.location?.endRow;
 
         if (isMultiRankSortable) {
@@ -3370,7 +3374,7 @@ function Atropos_Secat(sourceIdentifier, revokeAccess = false) {
             const { requests: resortRequests } = _Moirae_Pangunt_Fila({ sortedMembers: sortedAndUpdatedMembers, layout: sourceLayout, targetCol: config.node.location.startCol, slotStartRow: slotConfig.startRow, slotCapacity: slotConfig.endRow - slotConfig.startRow + 1 }, source.sheetName, _getSheetId(ss, source.sheetName), false);
             allRequests.push(...resortRequests);
         } else {
-            allRequests.push(..._getClearSinglePersonRequests(source.row, source.startCol, sourceLayout, _getSheetId(ss, source.sheetName)));
+            allRequests.push(..._getClearSinglePersonRequests(source.row, source.startCol, sourceLayout, _getSheetId(ss, source.sheetName), config.slot));
         }
 
         if (allRequests.length > 0) {
@@ -3393,7 +3397,7 @@ function Atropos_Secat(sourceIdentifier, revokeAccess = false) {
             message: `Successfully deleted ${source.player}.`,
             deltaPayload: {
                 deletedIdentifier: sourceIdentifier,
-                updatedPersons: sortedAndUpdatedMembers, 
+                updatedPersons: sortedAndUpdatedMembers,
                 newAvailabilityMap: newAvailabilityMap
             }
         };
