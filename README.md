@@ -60,9 +60,8 @@ THEMIS is absolutely overkill (with around 10,000 lines of code [THEMIS v1.5 had
 - **Hierarchical Organization**: Support for complex organizational structures (Companies → Platoons → Squads)
 - **Location Management**: Track member assignments across multiple sheets/locations
 - **Custom Fields**: Extensible system for additional member data (Phase tracking, etc.)
-- **Analytics & Reporting**: Built-in reporting and data analysis capabilities
 - **Real-time Updates**: Live synchronization across multiple users
-- **Permission Management**: Role-based access control and sheet permissions
+- **Permission Management**: Automatic spreadsheet editor access management
 - **Perfected UX/UI**: Polished, intuitive interfaces crafted for seamless user experience and operational efficiency
 - **Extensive Configuration**: Highly customizable configuration system
 
