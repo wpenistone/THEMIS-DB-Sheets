@@ -477,6 +477,86 @@ class ConfigResolver:
 
 
 # -----------------------------------------------------------------------------
+# Undo/Redo Commands
+# -----------------------------------------------------------------------------
+
+class MoveSlotCommand(QtGui.QUndoCommand):
+    def __init__(self, resolver: ConfigResolver, instance: ResolvedInstance, old_row: int, old_col: int, new_row: int, new_col: int, after: Optional[callable] = None):
+        super().__init__(f"Move Slot {'>'.join(instance.node_path)} to r{new_row} c{new_col}")
+        self.resolver = resolver
+        self.instance = instance
+        self.old_row = int(old_row)
+        self.old_col = int(old_col)
+        self.new_row = int(new_row)
+        self.new_col = int(new_col)
+        self.after = after
+
+    def redo(self):
+        self.resolver.apply_move(self.instance, self.new_row, self.new_col, prefer_slot_col_override=True)
+        if self.after:
+            self.after()
+
+    def undo(self):
+        self.resolver.apply_move(self.instance, self.old_row, self.old_col, prefer_slot_col_override=True)
+        if self.after:
+            self.after()
+
+
+class ChangeOffsetCommand(QtGui.QUndoCommand):
+    def __init__(self, model: ThemisConfigModel, layout: str, field_key: str, old_row: int, old_col: int, new_row: int, new_col: int, after: Optional[callable] = None):
+        super().__init__(f"Change Offset {layout}.{field_key} -> ({new_row}, {new_col})")
+        self.model = model
+        self.layout = layout
+        self.field_key = field_key
+        self.old_row = int(old_row)
+        self.old_col = int(old_col)
+        self.new_row = int(new_row)
+        self.new_col = int(new_col)
+        self.after = after
+
+    def _apply(self, r: int, c: int):
+        self.model.data.setdefault("LAYOUT_BLUEPRINTS", {}).setdefault(self.layout, {}).setdefault("offsets", {})[self.field_key] = {"row": int(r), "col": int(c)}
+
+    def redo(self):
+        self._apply(self.new_row, self.new_col)
+        if self.after:
+            self.after()
+
+    def undo(self):
+        self._apply(self.old_row, self.old_col)
+        if self.after:
+            self.after()
+
+
+class DeleteSlotCommand(QtGui.QUndoCommand):
+    def __init__(self, node: Dict[str, Any], slot: Dict[str, Any], index_hint: Optional[int] = None, after: Optional[callable] = None):
+        super().__init__("Delete Slot")
+        self.node = node
+        self.slot_copy = deep_copy(slot)
+        self.after = after
+        try:
+            self.index = index_hint if index_hint is not None else node.get('slots', []).index(slot)
+        except ValueError:
+            self.index = None
+
+    def redo(self):
+        if self.index is None:
+            return
+        slots = self.node.get('slots', [])
+        if 0 <= self.index < len(slots):
+            del slots[self.index]
+        if self.after:
+            self.after()
+
+    def undo(self):
+        if self.index is None:
+            return
+        self.node.setdefault('slots', []).insert(self.index, deep_copy(self.slot_copy))
+        if self.after:
+            self.after()
+
+
+# -----------------------------------------------------------------------------
 # Graphics: Spreadsheet canvas with interactive slot groups
 # -----------------------------------------------------------------------------
 
@@ -500,6 +580,14 @@ def pos_to_cell(x: float, y: float) -> Tuple[int, int]:
     col = int(x / CELL_W) + 1
     row = int(y / CELL_H) + 1
     return row, col
+
+
+def col_to_letters(col: int) -> str:
+    s = ""
+    while col > 0:
+        col, rem = divmod(col - 1, 26)
+        s = chr(65 + rem) + s
+    return s or "A"
 
 
 class SpreadsheetScene(QtWidgets.QGraphicsScene):
@@ -541,9 +629,110 @@ class SpreadsheetScene(QtWidgets.QGraphicsScene):
             j += 1
         painter.restore()
 
+    def drawForeground(self, painter: QtGui.QPainter, rect: QtCore.QRectF) -> None:
+        painter.save()
+        painter.setPen(QtGui.QPen(QtGui.QColor(120, 120, 120)))
+        # Column letters across top
+        start_col = int(rect.left() // CELL_W) + 1
+        end_col = int(rect.right() // CELL_W) + 2
+        for c in range(start_col, end_col):
+            x = (c - 1) * CELL_W
+            painter.drawText(QtCore.QRectF(x + 2, rect.top() + 2, CELL_W - 4, 16), int(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignVCenter), col_to_letters(c))
+        # Row numbers along left
+        start_row = int(rect.top() // CELL_H) + 1
+        end_row = int(rect.bottom() // CELL_H) + 2
+        for r in range(start_row, end_row):
+            y = (r - 1) * CELL_H
+            painter.drawText(QtCore.QRectF(rect.left() + 2, y + 2, 40, 16), int(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignVCenter), str(r))
+        painter.restore()
+
+
+class FieldHandleItem(QtWidgets.QGraphicsRectItem):
+    def __init__(self, parent_group: 'SlotGroupItem', field_key: str, row_off: int, col_off: int):
+        super().__init__(parent_group)
+        self.group = parent_group
+        self.field_key = field_key
+        self.row_off = int(row_off)
+        self.col_off = int(col_off)
+        self._press_row_off = self.row_off
+        self._press_col_off = self.col_off
+        self.setFlags(
+            QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+            | QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
+        )
+        self.setBrush(FIELD_BG)
+        self.setPen(QtGui.QPen(QtGui.QColor(140, 160, 200)))
+        self.setRect(0, 0, CELL_W, CELL_H)
+        self.setToolTip(f"Field: {field_key}\nDrag to move and update layout offsets")
+        self._position_from_offsets()
+
+    def _position_from_offsets(self):
+        x = self.group.padding + self.col_off * CELL_W
+        y = self.group.padding + self.group.header_h + self.row_off * CELL_H
+        self.setPos(x, y)
+
+    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem, widget: Optional[QtWidgets.QWidget] = None):  # type: ignore[override]
+        super().paint(painter, option, widget)
+        painter.save()
+        painter.setPen(FIELD_FG)
+        painter.drawText(self.rect().adjusted(4, 2, -4, -2), int(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignVCenter), self.field_key)
+        painter.restore()
+
+    def itemChange(self, change: QtWidgets.QGraphicsItem.GraphicsItemChange, value: Any):  # type: ignore[override]
+        if change == QtWidgets.QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
+            # Snap to nearest cell
+            p: QtCore.QPointF = value  # type: ignore
+            x = max(self.group.padding, p.x())
+            y = max(self.group.padding + self.group.header_h, p.y())
+            col_off = round((x - self.group.padding) / CELL_W)
+            row_off = round((y - (self.group.padding + self.group.header_h)) / CELL_H)
+            self.col_off = int(col_off)
+            self.row_off = int(row_off)
+            nx = self.group.padding + self.col_off * CELL_W
+            ny = self.group.padding + self.group.header_h + self.row_off * CELL_H
+            self.blockSignals(True)
+            self.setPos(QtCore.QPointF(nx, ny))
+            self.blockSignals(False)
+            # Update model's layout offset immediately for live feedback
+            layout = self.group.instance.layout
+            if layout:
+                self.group.resolver.model.data.setdefault("LAYOUT_BLUEPRINTS", {}).setdefault(layout, {}).setdefault("offsets", {})[self.field_key] = {"row": self.row_off, "col": self.col_off}
+                self.group.instance.offsets = self.group.resolver.model.data["LAYOUT_BLUEPRINTS"][layout]["offsets"]
+                self.group.update_position_from_instance()
+        return super().itemChange(change, value)
+
+    def mousePressEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:  # type: ignore[override]
+        self._press_row_off = self.row_off
+        self._press_col_off = self.col_off
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:  # type: ignore[override]
+        super().mouseReleaseEvent(event)
+        layout = self.group.instance.layout
+        if layout and self.group.undo_stack is not None:
+            cmd = ChangeOffsetCommand(self.group.resolver.model, layout, self.field_key, self._press_row_off, self._press_col_off, self.row_off, self.col_off, after=self.group.after_change_cb)
+            self.group.undo_stack.push(cmd)
+        elif layout and self.group.after_change_cb:
+            self.group.after_change_cb()
+
+    def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent) -> None:
+        menu = QtWidgets.QMenu()
+        remove_act = menu.addAction("Remove Field from Layout")
+        act = menu.exec(event.screenPos())
+        if act == remove_act:
+            layout = self.group.instance.layout
+            if layout:
+                try:
+                    del self.group.resolver.model.data["LAYOUT_BLUEPRINTS"][layout]["offsets"][self.field_key]
+                    self.group.instance.offsets = self.group.resolver.model.data["LAYOUT_BLUEPRINTS"][layout]["offsets"]
+                except Exception:
+                    pass
+                self.group.update_position_from_instance()
+                self.scene().removeItem(self)
+
 
 class SlotGroupItem(QtWidgets.QGraphicsItem):
-    def __init__(self, instance: ResolvedInstance, resolver: ConfigResolver):
+    def __init__(self, instance: ResolvedInstance, resolver: ConfigResolver, undo_stack: Optional[QtGui.QUndoStack] = None, after_change_cb: Optional[callable] = None):
         super().__init__()
         self.setFlags(
             QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable
@@ -551,10 +740,31 @@ class SlotGroupItem(QtWidgets.QGraphicsItem):
         )
         self.instance = instance
         self.resolver = resolver
+        self.undo_stack = undo_stack
+        self.after_change_cb = after_change_cb
         self.padding = 6
         self.header_h = 18
         self._cache_rect: Optional[QtCore.QRectF] = None
+        self._field_items: List[FieldHandleItem] = []
+        self._press_pos_rc: Optional[Tuple[int, int]] = None
         self._build_geometry()
+        self._rebuild_field_items()
+
+    def _rebuild_field_items(self):
+        # Clear old
+        for it in list(self._field_items):
+            try:
+                self.scene().removeItem(it)
+            except Exception:
+                pass
+        self._field_items.clear()
+        # Rebuild from offsets
+        for key, off in (self.instance.offsets or {}).items():
+            try:
+                fh = FieldHandleItem(self, key, int(off.get("row", 0)), int(off.get("col", 0)))
+                self._field_items.append(fh)
+            except Exception:
+                pass
 
     def _build_geometry(self):
         r = self.instance.row
@@ -579,7 +789,6 @@ class SlotGroupItem(QtWidgets.QGraphicsItem):
         painter.save()
         rect = self.boundingRect()
         header_rect = QtCore.QRectF(rect.left(), rect.top(), rect.width(), self.header_h)
-        body_rect = QtCore.QRectF(rect.left(), rect.top() + self.header_h, rect.width(), rect.height() - self.header_h)
         painter.setPen(QtGui.QPen(QtGui.QColor(180, 180, 180)))
         painter.setBrush(LABEL_BG)
         painter.drawRect(rect)
@@ -588,27 +797,13 @@ class SlotGroupItem(QtWidgets.QGraphicsItem):
         title = self._title_text()
         painter.setPen(LABEL_FG)
         painter.drawText(header_rect.adjusted(6, 0, -6, 0), int(QtCore.Qt.AlignmentFlag.AlignVCenter | QtCore.Qt.AlignmentFlag.AlignLeft), title)
-        # draw anchor cell
-        anchor_rc = QtCore.QRectF(*cell_to_pos(self.instance.row, self.instance.col).toTuple(), CELL_W, CELL_H)
-        anchor_rc.translate(0, self.header_h)
+        # draw anchor cell visual placeholder
+        anchor_rc = QtCore.QRectF(self.padding, self.padding + self.header_h, CELL_W, CELL_H)
         painter.setBrush(ANCHOR_COLOR)
         painter.setPen(QtGui.QPen(QtGui.QColor(160, 150, 80)))
         painter.drawRect(anchor_rc)
         painter.setPen(QtGui.QPen(QtGui.QColor(60, 60, 60)))
         painter.drawText(anchor_rc.adjusted(4, 2, -4, -2), int(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignVCenter), "anchor")
-        # fields
-        painter.setBrush(FIELD_BG)
-        painter.setPen(QtGui.QPen(FIELD_FG))
-        for key, off in (self.instance.offsets or {}).items():
-            rr = self.instance.row + int(off.get("row", 0))
-            cc = self.instance.col + int(off.get("col", 0))
-            fr = QtCore.QRectF(*cell_to_pos(rr, cc).toTuple(), CELL_W, CELL_H)
-            fr.translate(0, self.header_h)
-            painter.setBrush(FIELD_BG)
-            painter.setPen(QtGui.QPen(QtGui.QColor(140, 160, 200)))
-            painter.drawRect(fr)
-            painter.setPen(FIELD_FG)
-            painter.drawText(fr.adjusted(4, 2, -4, -2), int(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignVCenter), key)
         # selection outline
         if self.isSelected():
             painter.setPen(QtGui.QPen(QtGui.QColor(51, 153, 255), 2, QtCore.Qt.PenStyle.DashLine))
@@ -635,16 +830,75 @@ class SlotGroupItem(QtWidgets.QGraphicsItem):
     def update_position_from_instance(self):
         self.prepareGeometryChange()
         self._build_geometry()
+        self._rebuild_field_items()
         self.update()
+
+    def mousePressEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:  # type: ignore[override]
+        # Record original row/col for undo
+        pos = self.pos() + self.boundingRect().topLeft() + QtCore.QPointF(0, self.header_h)
+        row, col = pos_to_cell(pos.x(), pos.y())
+        self._press_pos_rc = (max(1, row), max(1, col))
+        super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:  # type: ignore[override]
         super().mouseReleaseEvent(event)
         pos = self.pos() + self.boundingRect().topLeft() + QtCore.QPointF(0, self.header_h)
         row, col = pos_to_cell(pos.x(), pos.y())
-        self.instance.row = max(1, row)
-        self.instance.col = max(1, col)
-        self.resolver.apply_move(self.instance, self.instance.row, self.instance.col, prefer_slot_col_override=True)
+        new_row = max(1, row)
+        new_col = max(1, col)
+        old_row, old_col = self._press_pos_rc or (self.instance.row, self.instance.col)
+        self.instance.row = new_row
+        self.instance.col = new_col
+        if self.undo_stack is not None:
+            cmd = MoveSlotCommand(self.resolver, self.instance, old_row, old_col, new_row, new_col, after=self.after_change_cb)
+            self.undo_stack.push(cmd)
+        else:
+            self.resolver.apply_move(self.instance, new_row, new_col, prefer_slot_col_override=True)
+            if self.after_change_cb:
+                self.after_change_cb()
         self.update_position_from_instance()
+
+    def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent) -> None:
+        menu = QtWidgets.QMenu()
+        detach_act = menu.addAction("Detach Blueprint at Node")
+        delete_act = menu.addAction("Delete Slot")
+        act = menu.exec(event.screenPos())
+        if act == detach_act:
+            if self.instance.origin == 'blueprint':
+                if self.resolver.detach_blueprint_for_node(self.instance.node_ref):
+                    # refresh field offsets reference to node slots
+                    self.update_position_from_instance()
+            else:
+                QtWidgets.QMessageBox.information(None, "Info", "This slot is already part of the node.")
+        elif act == delete_act:
+            self._delete_slot()
+
+    def _delete_slot(self):
+        node = self.instance.node_ref
+        slot = self.instance.slot_ref
+        if self.instance.origin == 'node':
+            slots = node.get('slots', [])
+            for i, s in enumerate(list(slots)):
+                if s is slot:
+                    del slots[i]
+                    break
+            # remove item from scene
+            try:
+                self.scene().removeItem(self)
+            except Exception:
+                pass
+        else:
+            # Detach then remove by index correspondence
+            bp = self.instance.origin_name
+            idx = int(self.instance.slot_index or 0)
+            if self.resolver.detach_blueprint_for_node(node):
+                slots = node.get('slots', [])
+                if 0 <= idx < len(slots):
+                    del slots[idx]
+                try:
+                    self.scene().removeItem(self)
+                except Exception:
+                    pass
 
 
 class SpreadsheetView(QtWidgets.QGraphicsView):
@@ -658,6 +912,8 @@ class SpreadsheetView(QtWidgets.QGraphicsView):
         self.setDragMode(QtWidgets.QGraphicsView.DragMode.RubberBandDrag)
         self._panning = False
         self._last_pan = QtCore.QPoint()
+        self.model: Optional[ThemisConfigModel] = None
+        self.resolver: Optional[ConfigResolver] = None
 
     def wheelEvent(self, event: QtGui.QWheelEvent) -> None:
         delta = event.angleDelta().y()
@@ -690,6 +946,86 @@ class SpreadsheetView(QtWidgets.QGraphicsView):
             return
         super().mouseReleaseEvent(event)
 
+    def _copy_selected(self):
+        selected = [it for it in self.scene().selectedItems() if isinstance(it, SlotGroupItem)]
+        if not selected:
+            return
+        payload = []
+        for it in selected:
+            payload.append({
+                'node_path': it.instance.node_path,
+                'slot': deep_copy(it.instance.slot_ref),
+                'row': it.instance.row,
+                'col': it.instance.col,
+            })
+        QtWidgets.QApplication.clipboard().setText(json.dumps({'themis_slots': payload}))
+
+    def _paste_to_current(self):
+        text = QtWidgets.QApplication.clipboard().text()
+        try:
+            data = json.loads(text)
+        except Exception:
+            return
+        if not isinstance(data, dict) or 'themis_slots' not in data:
+            return
+        slots = data['themis_slots']
+        if not self.model or not self.resolver:
+            return
+        # Determine target node: use node of first selected item if available; else first node in config
+        selected = [it for it in self.scene().selectedItems() if isinstance(it, SlotGroupItem)]
+        target_node = selected[0].instance.node_ref if selected else None
+        if target_node is None:
+            try:
+                target_node = self.model.data.get('ORGANIZATION_HIERARCHY', [])[0]
+            except Exception:
+                return
+        # Paste
+        for s in slots:
+            slot = s.get('slot', {})
+            loc = slot.get('location', {}) or {}
+            loc['row'] = int(s.get('row', 1)) + 2
+            loc['col'] = int(s.get('col', 1)) + 2
+            slot['location'] = loc
+            target_node.setdefault('slots', []).append(slot)
+        # Trigger refresh by selecting none
+        self.scene().clearSelection()
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        key = event.key()
+        modifiers = event.modifiers()
+        selected = [it for it in self.scene().selectedItems() if isinstance(it, SlotGroupItem)]
+        if selected and key in (QtCore.Qt.Key.Key_Left, QtCore.Qt.Key.Key_Right, QtCore.Qt.Key.Key_Up, QtCore.Qt.Key.Key_Down):
+            delta = 5 if (modifiers & QtCore.Qt.KeyboardModifier.ShiftModifier) else 1
+            for it in selected:
+                inst = it.instance
+                if key == QtCore.Qt.Key.Key_Left:
+                    inst.col = max(1, inst.col - delta)
+                elif key == QtCore.Qt.Key.Key_Right:
+                    inst.col = max(1, inst.col + delta)
+                elif key == QtCore.Qt.Key.Key_Up:
+                    inst.row = max(1, inst.row - delta)
+                elif key == QtCore.Qt.Key.Key_Down:
+                    inst.row = max(1, inst.row + delta)
+                it.resolver.apply_move(inst, inst.row, inst.col, prefer_slot_col_override=True)
+                it.update_position_from_instance()
+            event.accept()
+            return
+        if (modifiers & QtCore.Qt.KeyboardModifier.ControlModifier) and key == QtCore.Qt.Key.Key_C:
+            self._copy_selected()
+            event.accept()
+            return
+        if (modifiers & QtCore.Qt.KeyboardModifier.ControlModifier) and key == QtCore.Qt.Key.Key_V:
+            self._paste_to_current()
+            event.accept()
+            return
+        if key == QtCore.Qt.Key.Key_Delete:
+            # Delete selected node-defined slots
+            for it in selected:
+                it._delete_slot()
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
 
 # -----------------------------------------------------------------------------
 # Unified Studio: left tree, right canvas, right inspector
@@ -717,6 +1053,7 @@ class InspectorPanel(QtWidgets.QWidget):
         self.ranks_edit = QtWidgets.QLineEdit()
         self.origin_scope_combo = QtWidgets.QComboBox(); self.origin_scope_combo.addItems(["Prefer Slot Col", "Prefer Node StartCol"])
         self.detach_btn = QtWidgets.QPushButton("Detach Blueprint at Node")
+        self.move_to_node_btn = QtWidgets.QPushButton("Move Slot to Node…")
         layout.addRow("Selected", self.info_label)
         layout.addRow("Row", self.row_spin)
         layout.addRow("Col", self.col_spin)
@@ -726,6 +1063,7 @@ class InspectorPanel(QtWidgets.QWidget):
         layout.addRow("Ranks (comma)", self.ranks_edit)
         layout.addRow("Move Policy", self.origin_scope_combo)
         layout.addRow(self.detach_btn)
+        layout.addRow(self.move_to_node_btn)
         self.row_spin.valueChanged.connect(self._apply_row_col)
         self.col_spin.valueChanged.connect(self._apply_row_col)
         self.layout_combo.currentTextChanged.connect(self._apply_layout)
@@ -733,6 +1071,7 @@ class InspectorPanel(QtWidgets.QWidget):
         self.rank_edit.editingFinished.connect(self._apply_rank)
         self.ranks_edit.editingFinished.connect(self._apply_ranks)
         self.detach_btn.clicked.connect(self._detach)
+        self.move_to_node_btn.clicked.connect(self._move_to_node)
 
     def load(self, inst: Optional[ResolvedInstance]):
         self.current = inst
@@ -815,6 +1154,164 @@ class InspectorPanel(QtWidgets.QWidget):
             self.changed.emit()
         else:
             QtWidgets.QMessageBox.warning(self, "Unavailable", "Unable to detach blueprint for this node.")
+
+    def _move_to_node(self):
+        if not self.current:
+            return
+        dlg = NodeSelectDialog(self.resolver.model, self)
+        if dlg.exec() == QtWidgets.QDialog.DialogCode.Accepted and dlg.result_node is not None:
+            target = dlg.result_node
+            # If blueprint origin, detach first
+            if self.current.origin == 'blueprint':
+                self.resolver.detach_blueprint_for_node(self.current.node_ref)
+            src_node = self.current.node_ref
+            slot = self.current.slot_ref
+            # Remove from original node slots if present
+            if self.current.origin == 'node':
+                try:
+                    slots = src_node.get('slots', [])
+                    for i, s in enumerate(list(slots)):
+                        if s is slot:
+                            del slots[i]
+                            break
+                except Exception:
+                    pass
+            # Add to target node slots
+            new_slot = deep_copy(slot)
+            # Ensure location at current row/col
+            loc = new_slot.get('location', {}) or {}
+            loc['row'] = int(self.current.row)
+            loc['col'] = int(self.current.col)
+            new_slot['location'] = loc
+            target.setdefault('slots', []).append(new_slot)
+            QtWidgets.QMessageBox.information(self, "Moved", "Slot moved to selected node.")
+            self.changed.emit()
+
+
+class NodeInspectorPanel(QtWidgets.QWidget):
+    changed = QtCore.pyqtSignal()
+
+    def __init__(self, model: ThemisConfigModel):
+        super().__init__()
+        self.model = model
+        self.node: Optional[Dict[str, Any]] = None
+        self._build_ui()
+
+    def _build_ui(self):
+        form = QtWidgets.QFormLayout(self)
+        self.name_edit = QtWidgets.QLineEdit()
+        self.sheet_edit = QtWidgets.QLineEdit()
+        self.layout_combo = QtWidgets.QComboBox()
+        self.use_slots_combo = QtWidgets.QComboBox()
+        self.start_col = QtWidgets.QSpinBox(); self.start_col.setRange(1, 100000)
+        self.shortcuts_edit = QtWidgets.QLineEdit(); self.shortcuts_edit.setPlaceholderText("Comma-separated e.g. VI 1A, VI 1B")
+        self.event_row = QtWidgets.QSpinBox(); self.event_row.setRange(1, 100000)
+        self.event_col = QtWidgets.QSpinBox(); self.event_col.setRange(1, 100000)
+        self.detach_btn = QtWidgets.QPushButton("Detach Blueprint for this Node")
+        self.add_slot_btn = QtWidgets.QPushButton("Add Slot at Selection Row/Col")
+        form.addRow("Node Name", self.name_edit)
+        form.addRow("Sheet Name", self.sheet_edit)
+        form.addRow("Layout", self.layout_combo)
+        form.addRow("Use Slots From", self.use_slots_combo)
+        form.addRow("Start Col", self.start_col)
+        form.addRow("Shortcuts", self.shortcuts_edit)
+        h = QtWidgets.QHBoxLayout(); h.addWidget(self.event_row); h.addWidget(QtWidgets.QLabel("col")); h.addWidget(self.event_col)
+        form.addRow("Event Log Start", h)
+        form.addRow(self.detach_btn)
+        form.addRow(self.add_slot_btn)
+        self.name_edit.editingFinished.connect(self._apply)
+        self.sheet_edit.editingFinished.connect(self._apply)
+        self.layout_combo.currentTextChanged.connect(self._apply)
+        self.use_slots_combo.currentTextChanged.connect(self._apply)
+        self.start_col.valueChanged.connect(self._apply)
+        self.shortcuts_edit.editingFinished.connect(self._apply)
+        self.event_row.valueChanged.connect(self._apply)
+        self.event_col.valueChanged.connect(self._apply)
+        self.detach_btn.clicked.connect(self._detach)
+        self.add_slot_btn.clicked.connect(self._add_slot_here)
+
+    def load(self, node: Optional[Dict[str, Any]]):
+        self.node = node
+        self.layout_combo.blockSignals(True)
+        self.use_slots_combo.blockSignals(True)
+        self.layout_combo.clear(); self.use_slots_combo.clear()
+        self.layout_combo.addItem("")
+        self.layout_combo.addItems(sorted(self.model.data.get("LAYOUT_BLUEPRINTS", {}).keys()))
+        self.use_slots_combo.addItem("")
+        self.use_slots_combo.addItems(sorted(self.model.data.get("SLOT_BLUEPRINTS", {}).keys()))
+        self.layout_combo.blockSignals(False)
+        self.use_slots_combo.blockSignals(False)
+        if not node:
+            self.name_edit.setText(""); self.sheet_edit.setText(""); self.start_col.setValue(1)
+            self.shortcuts_edit.setText(""); self.event_row.setValue(1); self.event_col.setValue(1)
+            return
+        self.name_edit.setText(node.get("name", ""))
+        self.sheet_edit.setText(node.get("sheetName", ""))
+        ix = max(0, self.layout_combo.findText(node.get("layout", "")))
+        self.layout_combo.setCurrentIndex(ix)
+        ix2 = max(0, self.use_slots_combo.findText(node.get("useSlotsFrom", "")))
+        self.use_slots_combo.setCurrentIndex(ix2)
+        self.start_col.setValue(int(node.get("location", {}).get("startCol", 1)))
+        self.shortcuts_edit.setText(", ".join(node.get("shortcuts", [])))
+        if node.get("eventLogStart"):
+            self.event_row.setValue(int(node["eventLogStart"].get("row", 1)))
+            self.event_col.setValue(int(node["eventLogStart"].get("col", 1)))
+        else:
+            self.event_row.setValue(1); self.event_col.setValue(1)
+
+    def _apply(self):
+        if not self.node:
+            return
+        self.node["name"] = self.name_edit.text().strip()
+        sn = self.sheet_edit.text().strip()
+        if sn:
+            self.node["sheetName"] = sn
+        else:
+            self.node.pop("sheetName", None)
+        lay = self.layout_combo.currentText().strip()
+        if lay:
+            self.node["layout"] = lay
+        else:
+            self.node.pop("layout", None)
+        usf = self.use_slots_combo.currentText().strip()
+        if usf:
+            self.node["useSlotsFrom"] = usf
+        else:
+            self.node.pop("useSlotsFrom", None)
+        sc = int(self.start_col.value())
+        self.node.setdefault("location", {})["startCol"] = sc
+        shortcuts = [s.strip() for s in self.shortcuts_edit.text().split(',') if s.strip()]
+        if shortcuts:
+            self.node["shortcuts"] = shortcuts
+        else:
+            self.node.pop("shortcuts", None)
+        if self.event_row.value() > 0 and self.event_col.value() > 0:
+            self.node["eventLogStart"] = {"row": int(self.event_row.value()), "col": int(self.event_col.value())}
+        else:
+            self.node.pop("eventLogStart", None)
+        self.changed.emit()
+
+    def _detach(self):
+        if not self.node:
+            return
+        from_node = self.node
+        # Detach blueprint for node: copy slots from blueprint into node
+        if self.model.data.get("SLOT_BLUEPRINTS") and from_node.get("useSlotsFrom"):
+            bp = from_node.get("useSlotsFrom")
+            slots = (self.model.data.get("SLOT_BLUEPRINTS", {}) or {}).get(bp)
+            if slots:
+                from_node["slots"] = [deep_copy(s) for s in slots]
+                from_node.pop("useSlotsFrom", None)
+                self.changed.emit()
+
+    def _add_slot_here(self):
+        if not self.node:
+            return
+        # Add a minimal slot that will appear at current startCol and first empty row near 10
+        lay = self.node.get("layout") or ""
+        slot = {"layout": lay, "location": {"row": 10, "col": int(self.start_col.value())}}
+        self.node.setdefault("slots", []).append(slot)
+        self.changed.emit()
 
 
 class HierarchyPanel(QtWidgets.QWidget):
@@ -908,6 +1405,45 @@ class HierarchyPanel(QtWidgets.QWidget):
         self.refresh()
 
 
+class NodeSelectDialog(QtWidgets.QDialog):
+    def __init__(self, model: ThemisConfigModel, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Select Node")
+        self.model = model
+        self.result_node: Optional[Dict[str, Any]] = None
+        layout = QtWidgets.QVBoxLayout(self)
+        self.tree = QtWidgets.QTreeWidget(); self.tree.setHeaderLabels(["Name"]) 
+        layout.addWidget(self.tree, 1)
+        btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+        layout.addWidget(btns)
+        btns.accepted.connect(self._accept)
+        btns.rejected.connect(self.reject)
+        self._populate()
+
+    def _populate(self):
+        self.tree.clear()
+        def add(parent, node):
+            it = QtWidgets.QTreeWidgetItem([node.get('name', '')])
+            it.setData(0, QtCore.Qt.ItemDataRole.UserRole, node)
+            if parent is None:
+                self.tree.addTopLevelItem(it)
+            else:
+                parent.addChild(it)
+            for ch in node.get('children', []):
+                add(it, ch)
+        for n in self.model.data.get('ORGANIZATION_HIERARCHY', []):
+            add(None, n)
+        self.tree.expandAll()
+
+    def _accept(self):
+        it = self.tree.currentItem()
+        if not it:
+            self.result_node = None
+        else:
+            self.result_node = it.data(0, QtCore.Qt.ItemDataRole.UserRole)
+        self.accept()
+
+
 class StudioView(QtWidgets.QWidget):
     def __init__(self, model: ThemisConfigModel):
         super().__init__()
@@ -936,15 +1472,46 @@ class StudioView(QtWidgets.QWidget):
         self.toolbar.addAction(self.zoom_in)
         self.toolbar.addAction(self.zoom_out)
         self.toolbar.addAction(self.fit_btn)
+        self.toolbar.addSeparator()
+        self.align_left_act = QtWidgets.QAction("Align Left", self)
+        self.align_center_x_act = QtWidgets.QAction("Align Center X", self)
+        self.align_right_act = QtWidgets.QAction("Align Right", self)
+        self.align_top_act = QtWidgets.QAction("Align Top", self)
+        self.align_middle_y_act = QtWidgets.QAction("Align Middle Y", self)
+        self.align_bottom_act = QtWidgets.QAction("Align Bottom", self)
+        self.distrib_h_act = QtWidgets.QAction("Distribute Horizontally", self)
+        self.distrib_v_act = QtWidgets.QAction("Distribute Vertically", self)
+        self.export_img_act = QtWidgets.QAction("Export Image…", self)
+        self.toolbar.addAction(self.align_left_act)
+        self.toolbar.addAction(self.align_center_x_act)
+        self.toolbar.addAction(self.align_right_act)
+        self.toolbar.addAction(self.align_top_act)
+        self.toolbar.addAction(self.align_middle_y_act)
+        self.toolbar.addAction(self.align_bottom_act)
+        self.toolbar.addAction(self.distrib_h_act)
+        self.toolbar.addAction(self.distrib_v_act)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(self.export_img_act)
         self.scene = SpreadsheetScene(self)
         self.view = SpreadsheetView(self.scene)
+        self.view.model = self.model
+        self.view.resolver = self.resolver
         self.inspector = InspectorPanel(self.model, self.resolver)
+        self.node_inspector = NodeInspectorPanel(self.model)
+        self.undo_stack = QtGui.QUndoStack(self)
+        self.undo_act = self.undo_stack.createUndoAction(self, "Undo")
+        self.redo_act = self.undo_stack.createRedoAction(self, "Redo")
+        self.undo_act.setShortcut(QtGui.QKeySequence.StandardKey.Undo)
+        self.redo_act.setShortcut(QtGui.QKeySequence.StandardKey.Redo)
+        self.toolbar.addAction(self.undo_act)
+        self.toolbar.addAction(self.redo_act)
         split = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         left_panel = QtWidgets.QWidget(); llo = QtWidgets.QVBoxLayout(left_panel); llo.addWidget(self.hierarchy)
         right_split = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical)
         canvas_wrap = QtWidgets.QWidget(); cwlo = QtWidgets.QVBoxLayout(canvas_wrap); cwlo.setContentsMargins(0,0,0,0); cwlo.addWidget(self.toolbar); cwlo.addWidget(self.view, 1)
         right_split.addWidget(canvas_wrap)
         right_split.addWidget(self.inspector)
+        right_split.addWidget(self.node_inspector)
         split.addWidget(left_panel)
         split.addWidget(right_split)
         split.setStretchFactor(0, 0)
@@ -952,14 +1519,25 @@ class StudioView(QtWidgets.QWidget):
         layout.addWidget(split, 1)
 
     def _connect(self):
-        self.hierarchy.selectionChanged.connect(self._refresh_sections)
+        self.hierarchy.selectionChanged.connect(self._on_tree_selection)
         self.sheet_combo.currentTextChanged.connect(self._render)
         self.section_combo.currentTextChanged.connect(self._render)
         self.zoom_in.triggered.connect(lambda: self.view.scale(1.25, 1.25))
         self.zoom_out.triggered.connect(lambda: self.view.scale(0.8, 0.8))
         self.fit_btn.triggered.connect(self._fit)
         self.inspector.changed.connect(self._render)
+        self.node_inspector.changed.connect(self._on_node_changed)
         self.scene.selectionChanged.connect(self._on_selection_changed)
+        # Align/distribute actions
+        self.align_left_act.triggered.connect(lambda: self._align('left'))
+        self.align_center_x_act.triggered.connect(lambda: self._align('center_x'))
+        self.align_right_act.triggered.connect(lambda: self._align('right'))
+        self.align_top_act.triggered.connect(lambda: self._align('top'))
+        self.align_middle_y_act.triggered.connect(lambda: self._align('middle_y'))
+        self.align_bottom_act.triggered.connect(lambda: self._align('bottom'))
+        self.distrib_h_act.triggered.connect(lambda: self._distribute('h'))
+        self.distrib_v_act.triggered.connect(lambda: self._distribute('v'))
+        self.export_img_act.triggered.connect(self._export_image)
 
     def _fit(self):
         items = self.scene.items()
@@ -992,6 +1570,38 @@ class StudioView(QtWidgets.QWidget):
             self.section_combo.addItem(p)
         self.section_combo.blockSignals(False)
 
+    def _on_tree_selection(self):
+        node = self.hierarchy.selected_node()
+        self.node_inspector.load(node)
+        self._refresh_sections()
+        self._render()
+
+    def _on_node_changed(self):
+        # Node inspector applied changes
+        self.hierarchy.refresh()
+        self._refresh_sections()
+        self._render()
+
+    def _on_command_applied(self):
+        # Generic callback for commands to re-render/refresh
+        self._render()
+
+    def _export_image(self):
+        # Render current scene to image
+        if not self.scene.items():
+            return
+        br = QtCore.QRectF()
+        for it in self.scene.items():
+            br = br.united(it.sceneBoundingRect())
+        img = QtGui.QImage(int(br.width()) + 100, int(br.height()) + 100, QtGui.QImage.Format.Format_ARGB32)
+        img.fill(QtGui.QColor(255, 255, 255))
+        painter = QtGui.QPainter(img)
+        self.view.render(painter, QtCore.QRectF(0, 0, img.width(), img.height()), br.adjusted(-50, -50, 50, 50))
+        painter.end()
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Export Image", "sheet.png", "PNG (*.png)")
+        if path:
+            img.save(path, "PNG")
+
     def _render(self):
         self.scene.clear()
         sheet = self.sheet_combo.currentText()
@@ -1000,9 +1610,77 @@ class StudioView(QtWidgets.QWidget):
         filter_path = None if self.section_combo.currentIndex() == 0 else self.section_combo.currentText()
         insts = self.resolver.instances_by_sheet(sheet, filter_path)
         for inst in insts:
-            item = SlotGroupItem(inst, self.resolver)
+            item = SlotGroupItem(inst, self.resolver, self.undo_stack, self._on_command_applied)
             self.scene.addItem(item)
             item.setPos(cell_to_pos(inst.row, inst.col))
+
+    def _selected_groups(self) -> List[SlotGroupItem]:
+        return [it for it in self.scene.selectedItems() if isinstance(it, SlotGroupItem)]
+
+    def _align(self, mode: str):
+        items = self._selected_groups()
+        if len(items) < 2:
+            return
+        rows = [it.instance.row for it in items]
+        cols = [it.instance.col for it in items]
+        if mode == 'left':
+            target = min(cols)
+            for it in items:
+                inst = it.instance; inst.col = target
+                it.resolver.apply_move(inst, inst.row, inst.col, prefer_slot_col_override=True)
+                it.update_position_from_instance()
+        elif mode == 'center_x':
+            # Align to average column
+            target = round(sum(cols) / len(cols))
+            for it in items:
+                inst = it.instance; inst.col = target
+                it.resolver.apply_move(inst, inst.row, inst.col, prefer_slot_col_override=True)
+                it.update_position_from_instance()
+        elif mode == 'right':
+            target = max(cols)
+            for it in items:
+                inst = it.instance; inst.col = target
+                it.resolver.apply_move(inst, inst.row, inst.col, prefer_slot_col_override=True)
+                it.update_position_from_instance()
+        elif mode == 'top':
+            target = min(rows)
+            for it in items:
+                inst = it.instance; inst.row = target
+                it.resolver.apply_move(inst, inst.row, inst.col, prefer_slot_col_override=True)
+                it.update_position_from_instance()
+        elif mode == 'middle_y':
+            target = round(sum(rows) / len(rows))
+            for it in items:
+                inst = it.instance; inst.row = target
+                it.resolver.apply_move(inst, inst.row, inst.col, prefer_slot_col_override=True)
+                it.update_position_from_instance()
+        elif mode == 'bottom':
+            target = max(rows)
+            for it in items:
+                inst = it.instance; inst.row = target
+                it.resolver.apply_move(inst, inst.row, inst.col, prefer_slot_col_override=True)
+                it.update_position_from_instance()
+
+    def _distribute(self, axis: str):
+        items = self._selected_groups()
+        if len(items) < 3:
+            return
+        if axis == 'h':
+            items.sort(key=lambda it: it.instance.col)
+            min_c = items[0].instance.col; max_c = items[-1].instance.col
+            step = (max_c - min_c) / (len(items) - 1) if len(items) > 1 else 0
+            for i, it in enumerate(items):
+                inst = it.instance; inst.col = int(round(min_c + i * step))
+                it.resolver.apply_move(inst, inst.row, inst.col, prefer_slot_col_override=True)
+                it.update_position_from_instance()
+        else:
+            items.sort(key=lambda it: it.instance.row)
+            min_r = items[0].instance.row; max_r = items[-1].instance.row
+            step = (max_r - min_r) / (len(items) - 1) if len(items) > 1 else 0
+            for i, it in enumerate(items):
+                inst = it.instance; inst.row = int(round(min_r + i * step))
+                it.resolver.apply_move(inst, inst.row, inst.col, prefer_slot_col_override=True)
+                it.update_position_from_instance()
 
     def _on_selection_changed(self):
         items = [it for it in self.scene.selectedItems() if isinstance(it, SlotGroupItem)]
