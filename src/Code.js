@@ -3097,7 +3097,6 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
 
         const oldRankIndex = _getRankIndex(oldState.rank);
         const newRankIndex = _getRankIndex(newRank);
-        const isPromotion = newRankIndex > oldRankIndex;
 
         const personDataToMove = { ...oldState, rank: newRank };
         if (email !== null) personDataToMove.email = email;
@@ -3119,15 +3118,22 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
         const destinationTracksUbt = !!destLayoutOffsets.BTcheckbox;
 
         let ubtStatus = oldState.hasPassedUBT;
-        if (isPromotion) {
-            const triggerRank = THEMIS_CONFIG.UBT_SETTINGS.TRIGGER_RANK;
-            if (triggerRank) {
-                const triggerRankIndex = _getRankIndex(triggerRank);
-                const isAcrossThreshold = oldRankIndex < triggerRankIndex && newRankIndex >= triggerRankIndex;
-                if (isAcrossThreshold && !ubtApproved) {
-                     return { status: SCRIPT_STATUS.NEEDS_CONFIRMATION, message: (THEMIS_CONFIG.UBT_SETTINGS.PROMPT_MESSAGE || '').replace('{name}', THEMIS_CONFIG.UBT_SETTINGS.NAME) };
-                }
-                if (ubtApproved) ubtStatus = true;
+
+        const triggerRank = THEMIS_CONFIG.UBT_SETTINGS.TRIGGER_RANK;
+        if (triggerRank) {
+            const triggerRankIndex = _getRankIndex(triggerRank);
+
+            const isPromotionAcrossThreshold = oldRankIndex < triggerRankIndex && newRankIndex >= triggerRankIndex;
+            const isCorrectiveUbtCheck = destinationTracksUbt && newRankIndex >= triggerRankIndex && !oldState.hasPassedUBT;
+
+            if ((isPromotionAcrossThreshold || isCorrectiveUbtCheck) && !ubtApproved) {
+                const ubtName = THEMIS_CONFIG.UBT_SETTINGS.NAME || 'Training';
+                const promptTemplate = THEMIS_CONFIG.UBT_SETTINGS.PROMPT_MESSAGE || 'This promotion requires the member to be {name} passed. Is this correct?';
+                const message = promptTemplate.replace('{name}', ubtName);
+                return { status: SCRIPT_STATUS.NEEDS_CONFIRMATION, message: message };
+            }
+            if (ubtApproved) {
+                ubtStatus = true;
             }
         }
         personDataToMove.hasPassedUBT = destinationTracksUbt ? ubtStatus : false;
@@ -3153,7 +3159,7 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
             return hasMultiple || (slot.ranks && slot.ranks.length > 0);
         };
 
-        const sourceIsSortable = isSlotSortable(sourceConfig.slot);
+        const sourceIsSortable = isSlotSortable(sourceConfig.slot);   
 
         let finalUpdatedPersons = [];
         let finalSheetNamesToInvalidate = new Set([oldState.sheetName]);
@@ -3173,7 +3179,7 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
 
             const possibleCoords = getAllPossibleCoords(sourceConfig.slot, sourceConfig.node, sourceConfig.sheetName);
             const membersInSlot = allCompanymen.filter(p => possibleCoords.some(coord => `${coord.sheet}|${coord.row}|${coord.col}` === p.sourceIdentifier));
-
+     
             const personToUpdateIndex = membersInSlot.findIndex(p => p.sourceIdentifier === sourceIdentifier);
             if (personToUpdateIndex > -1) {
                 membersInSlot[personToUpdateIndex] = { ...membersInSlot[personToUpdateIndex], ...personDataToMove };
@@ -3211,7 +3217,7 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
         if (!newState) throw new Error(`Validation failed: Could not find ${oldState.player} after update.`);
 
         Aletheia_Testatur('MEMBER_UPDATE', 'Dike_Iudicat', { user: getCurrentUserEmail(), oldState: oldState, newState: newState });
-
+        
         return {
             status: SCRIPT_STATUS.SUCCESS,
             message: _Peitho_Suadet(oldState.player, oldState.rank, newRank, oldState.location, newLocation.split('>').pop()),
