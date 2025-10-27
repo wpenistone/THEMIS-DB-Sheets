@@ -2693,11 +2693,9 @@ onPersonSearchInput: function() {
           this.resetPersonSelection();
             this.setUiLock(false); 
         },
-onSubmitSuccess: function(result) {
-
+onSubmitSuccess: async function(result) { 
     if (result.status === "SUCCESS") {
         this.showConfirmation(result.message, "OK", null);
-
         if (result.deltaPayload) {
             this.applyDelta(result.deltaPayload);
         }
@@ -2711,20 +2709,37 @@ onSubmitSuccess: function(result) {
         if (this.state.isSearchMode) {
             this.removeSelectedPersonChip();
         }
+    
+        this.setUiLock(false);
 
-        if (result.postActionVerificationToken) {
-            google.script.run.Iustitia_Confirmat_Actum(result.postActionVerificationToken);
+    } else if (result.status === "NEEDS_CONFIRMATION") {
+        this.setUiLock(false); 
+        
+        const ubtName = this.state.ubtSettings.NAME || 'Training';
+        const ubtConfirmed = await this.showConfirmation(result.message, `Yes, ${ubtName} Passed`, "Cancel");
+
+        if (ubtConfirmed) {
+            this.setUiLock(true, 'Confirming and Updating...');
+            
+            const newRank = this.elements.rankSelector.value;
+            const newLocation = this.elements.locationSelector.value;
+            const emailForUpdate = this.state.selectedPerson.email || null;
+            
+            google.script.run
+                .withSuccessHandler(this.onSubmitSuccess.bind(this))
+                .withFailureHandler(this.onFailure.bind(this))
+                .Dike_Iudicat(
+                    this.state.selectedPersonIdentifier,
+                    newRank,
+                    newLocation,
+                    true, 
+                    emailForUpdate,
+                    this.state.selectedRankTitle
+                );
         }
-        if (result.webhookPayload) {
-
-        }
-
     } else {
         this.onFailure({ message: result.message });
-        return;
     }
-
-    this.setUiLock(false);
 },
 onDeleteSuccess: function(result) {
        if (result.status === "SUCCESS") {
