@@ -1,4 +1,4 @@
-  const THEMIS_CONFIG = {
+const THEMIS_CONFIG = {
     "DATE_FORMAT": "MM/DD/YY",
     "EVENT_LOG_SHEET_NAME": "Event Logbook",
     "EVENT_LOG_COLUMNS": {
@@ -51,20 +51,28 @@
             "LOAcheckbox": { "row": 0, "col": 7 },
             "BTcheckbox": { "row": 0, "col": 8 }
           }
+        },
+        "SERVIUS_OFFSETS": {
+          "offsets": {
+            "rank": { "row": 0, "col": 0 },
+            "username": { "row": 0, "col": 1 },
+            "phase": { "row": 0, "col": 4 },
+            "discordId": { "row": 0, "col": 5 },
+            "region": { "row": 0, "col": 6 },
+            "joinDate": { "row": 0, "col": 7 },
+            "LOAcheckbox": { "row": 0, "col": 8 },
+            "BTcheckbox": { "row": 0, "col": 9 }
+          }
         }
       },
         "SLOT_BLUEPRINTS": {
           "STANDARD_CONTUBERNIUM": [{
-              "layout": "BILLET_NCO_OFFSETS", 
+              "layout": "BILLET_NCO_OFFSETS",
               "rank": "Decanus",
               "count": 1,
-              "location": { "rows": [12] }
-            },
-            {
-              "layout": "BILLET_NCO_OFFSETS", 
-              "rank": "Cornicen",
-              "location": { "startRow": 14, "endRow": 15 },
-              "count": 2
+              "location": {
+                "row": 12
+              } 
             },
             {
               "ranks": ["Tirones", "Auxilia", "Milites", "Immunes"],
@@ -75,7 +83,7 @@
           "CONTUBERNIUM_LOW": [{
               "layout": "BILLET_NCO_OFFSETS", 
               "rank": "Decanus",
-              "location": { "rows": [44] }
+              "location": { "row": 44 }
             },
             {
               "layout": "BILLET_NCO_OFFSETS", 
@@ -88,633 +96,176 @@
               "count": 23,
               "location": { "startRow": 49, "endRow": 71 }
             }
-                    ]
-          
+          ],
+          "OLYMPUS_CONTUBERNIUM": [{
+              "layout": "BILLET_NCO_OFFSETS", 
+              "rank": "Decanus",
+              "location": { "row": 12 }
+            },
+            {
+              "layout": "BILLET_NCO_OFFSETS", 
+              "rank": "Cornicen",
+              "location": { "startRow": 14, "endRow": 15 },
+              "count": 2
+            },
+            {
+              "ranks": ["Immunes", "Milites"],
+              "count": 13,
+              "location": { "startRow": 17, "endRow": 29 }
+            }
+          ],
+          "AUGUSTII_CONTUBERNIUM": [{
+              "layout": "BILLET_NCO_OFFSETS", 
+              "rank": "Decanus",
+              "location": { "row": 34 }
+            },
+            {
+              "layout": "BILLET_NCO_OFFSETS", 
+              "rank": "Cornicen",
+              "location": { "startRow": 36, "endRow": 37 },
+              "count": 2
+            },
+            {
+              "ranks": ["Immunes", "Milites"],
+              "count": 7,
+              "location": { "startRow": 39, "endRow": 45 }
+            }
+          ],
+          "SERVIUS_CONTUBERNIUM": [{
+              "ranks": ["Tirones"],
+              "count": 21,
+              "location": { "startRow": 5, "endRow": 25 }
+            }
+          ]
         },
     "ORGANIZATION_HIERARCHY": [{
       "children": [{
-        "children": [{
-          "children": [{
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "First Aquilia Contubernium",
-            "shortcuts": ["VI 1A"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "First Bellum Contubernium",
-            "shortcuts": ["VI 1B"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "First Caesar Contubernium",
-            "shortcuts": ["VI 1C"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "First Dominus Contubernium",
-            "shortcuts": ["VI 1D"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          }],
-          "name": "First Cohort",
-          "sheetName": "VI 1C",
-          "slots": [{
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 7,
-              "row": 25,
-              "sheetName": "Legio VI"
-            },
-            "rank": "Centurion",
-            "title": "First Centurion"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 7,
-              "row": 29,
-              "sheetName": "Legio VI"
-            },
-            "rank": "Optio",
-            "title": "First Optio"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 7,
-              "row": 33,
-              "sheetName": "Legio VI"
-            },
-            "rank": "Signifer",
-            "title": "First Signifer"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 4,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "First Aquilia & Bellum Tesserarius"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "First Caesar & Dominus Tesserarius"
-          }]
-        },
-        {
-          "children": [{
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "Second Aquilia Contubernium",
-            "shortcuts": ["VI 2A"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "Second Bellum Contubernium",
-            "shortcuts": ["VI 2B"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "Second Caesar Contubernium",
-            "shortcuts": ["VI 2C"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "Second Dominus Contubernium",
-            "shortcuts": ["VI 2D"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          }],
-          "name": "Second Cohort",
-          "sheetName": "VI 2C",
-          "slots": [{
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 25,
-              "sheetName": "Legio VI"
-            },
-            "rank": "Centurion",
-            "title": "Second Centurion"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 29,
-              "sheetName": "Legio VI"
-            },
-            "rank": "Optio",
-            "title": "Second Optio"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 33,
-              "sheetName": "Legio VI"
-            },
-            "rank": "Signifer",
-            "title": "Second Signifer"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 4,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "Second Aquilia & Bellum Tesserarius"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "Second Caesar & Dominus Tesserarius"
-          }]
-        },
-        {
-          "children": [{
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "Third Aquilia Contubernium",
-            "shortcuts": ["VI 3A"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "Third Bellum Contubernium",
-            "shortcuts": ["VI 3B"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "Third Caesar Contubernium",
-            "shortcuts": ["VI 3C"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "Third Dominus Contubernium",
-            "shortcuts": ["VI 3D"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          }],
-          "name": "Third Cohort",
-          "sheetName": "VI 3C",
-          "slots": [{
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 25,
-              "row": 25,
-              "sheetName": "Legio VI"
-            },
-            "rank": "Centurion",
-            "title": "Third Centurion"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 25,
-              "row": 29,
-              "sheetName": "Legio VI"
-            },
-            "rank": "Optio",
-            "title": "Third Optio"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 25,
-              "row": 33,
-              "sheetName": "Legio VI"
-            },
-            "rank": "Signifer",
-            "title": "Third Signifer"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 4,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "Third Aquilia & Bellum Tesserarius"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "Third Caesar & Dominus Tesserarius"
-          }]
-        }],
-        "layout": "BILLET_OFFSETS",
         "name": "Legio VI",
         "sheetName": "Legio VI",
-        "slots": [{
-          "layout": "BILLET_OFFSETS",
-          "location": {
-            "col": 16,
-            "row": 6
-          },
-          "rank": "Legatus",
-          "title": "Legatus"
-        },
-        {
-          "count": 2,
-          "layout": "BILLET_OFFSETS",
-          "locations": [{
-            "col": 7,
-            "row": 10
-          },
-          {
-            "col": 25,
-            "row": 10
-          }],
-          "rank": "Tribunus",
-          "title": "Tribunus"
-        },
-        {
-          "layout": "BILLET_OFFSETS",
-          "location": {
-            "col": 16,
-            "row": 14
-          },
-          "rank": "Primus Pilus",
-          "title": "Primus Pilus"
-        },
-        {
-          "layout": "BILLET_OFFSETS",
-          "location": {
-            "col": 16,
-            "row": 18
-          },
-          "rank": "Aquilifer",
-          "title": "Aquilifer"
-        }]
-      },
-
-      {
-        "children": [{
-          "children": [{
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "First Aquilia Contubernium",
-            "shortcuts": ["XIII 1A"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "First Bellum Contubernium",
-            "shortcuts": ["XIII 1B"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "First Caesar Contubernium",
-            "shortcuts": ["XIII 1C"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "First Dominus Contubernium",
-            "shortcuts": ["XIII 1D"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          }],
-          "name": "First Cohort",
-          "sheetName": "XIII 1C",
-          "slots": [{
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 7,
-              "row": 25,
-              "sheetName": "Legio XIII"
-            },
-            "rank": "Centurion",
-            "title": "First Centurion"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 7,
-              "row": 29,
-              "sheetName": "Legio XIII"
-            },
-            "rank": "Optio",
-            "title": "First Optio"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 7,
-              "row": 33,
-              "sheetName": "Legio XIII"
-            },
-            "rank": "Signifer",
-            "title": "First Signifer"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 4,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "First Aquilia & Bellum Tesserarius"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "First Caesar & Dominus Tesserarius"
-          }]
-        },
-        {
-          "children": [{
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "Second Aquilia Contubernium",
-            "shortcuts": ["XIII 2A"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "Second Bellum Contubernium",
-            "shortcuts": ["XIII 2B"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "Second Caesar Contubernium",
-            "shortcuts": ["XIII 2C"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "Second Dominus Contubernium",
-            "shortcuts": ["XIII 2D"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          }],
-          "name": "Second Cohort",
-          "sheetName": "XIII 2C",
-          "slots": [{
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 25,
-              "sheetName": "Legio XIII"
-            },
-            "rank": "Centurion",
-            "title": "Second Centurion"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 29,
-              "sheetName": "Legio XIII"
-            },
-            "rank": "Optio",
-            "title": "Second Optio"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 33,
-              "sheetName": "Legio XIII"
-            },
-            "rank": "Signifer",
-            "title": "Second Signifer"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 4,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "Second Aquilia & Bellum Tesserarius"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "Second Caesar & Dominus Tesserarius"
-          }]
-        },
-        {
-          "children": [{
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "Third Aquilia Contubernium",
-            "shortcuts": ["XIII 3A"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 4
-            },
-            "name": "Third Bellum Contubernium",
-            "shortcuts": ["XIII 3B"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "Third Caesar Contubernium",
-            "shortcuts": ["XIII 3C"],
-            "useSlotsFrom": "STANDARD_CONTUBERNIUM"
-          },
-          {
-            "layout": "SQUAD_OFFSETS",
-            "location": {
-              "startCol": 16
-            },
-            "name": "Third Dominus Contubernium",
-            "shortcuts": ["XIII 3D"],
-            "useSlotsFrom": "CONTUBERNIUM_LOW"
-          }],
-          "name": "Third Cohort",
-          "sheetName": "XIII 3C",
-          "slots": [{
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 25,
-              "row": 25,
-              "sheetName": "Legio XIII"
-            },
-            "rank": "Centurion",
-            "title": "Third Centurion"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 25,
-              "row": 29,
-              "sheetName": "Legio XIII"
-            },
-            "rank": "Optio",
-            "title": "Third Optio"
-          },
-          {
-            "layout": "BILLET_OFFSETS",
-            "location": {
-              "col": 25,
-              "row": 33,
-              "sheetName": "Legio XIII"
-            },
-            "rank": "Signifer",
-            "title": "Third Signifer"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 4,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "Third Aquilia & Bellum Tesserarius"
-          },
-          {
-            "layout": "BILLET_NCO_OFFSETS",
-            "location": {
-              "col": 16,
-              "row": 7
-            },
-            "rank": "Tesserarius",
-            "title": "Third Caesar & Dominus Tesserarius"
-          }]
-        }],
         "layout": "BILLET_OFFSETS",
-        "name": "Legio XIII",
-        "sheetName": "Legio XIII",
-        "slots": [{
-          "layout": "BILLET_OFFSETS",
-          "location": {
-            "col": 16,
-            "row": 6
-          },
-          "rank": "Legatus",
-          "title": "Legatus"
-        },
-        {
-          "count": 2,
-          "layout": "BILLET_OFFSETS",
-          "locations": [{
-            "col": 7,
-            "row": 10
+        "slots": [
+          {
+            "rank": "Legatus",
+            "layout": "BILLET_OFFSETS",
+            "location": { "row": 6, "col": 16 }
+          }, {
+            "rank": "Tribunus",
+            "title": "First Cohort Tribunus",
+            "layout": "BILLET_OFFSETS",
+            "location": { "row": 10, "col": 7 }
+          }, {
+            "rank": "Tribunus",
+            "title": "Second Cohort Tribunus",
+            "layout": "BILLET_OFFSETS",
+            "location": { "row": 10, "col": 25 }
+          }
+        ],
+        "children": [{
+          "name": "First Cohort",
+          "sheetName": "VI First Cohort",
+          "slots": [{
+            "rank": "Praefectus", "layout": "BILLET_OFFSETS",
+            "location": { "row": 6, "col": 16 }
           },
           {
-            "col": 25,
-            "row": 10
+            "rank": "Primus Pilus", "layout": "BILLET_OFFSETS",
+            "location": { "row": 10, "col": 16 }
+          },
+          {
+            "rank": "Aquilifer", "layout": "BILLET_OFFSETS",
+            "location": { "row": 14, "col": 16 }
           }],
-          "rank": "Tribunus",
-          "title": "Tribunus"
+          "children": [{
+            "name": "First Century", "sheetName": "VI I.C. 1C",
+            "slots": [
+              { "rank": "Centurion", "layout": "BILLET_OFFSETS", "location": { "row": 21, "col": 7, "sheetName": "VI First Cohort" } },
+              { "rank": "Optio", "layout": "BILLET_OFFSETS", "location": { "row": 25, "col": 7, "sheetName": "VI First Cohort" } },
+              { "rank": "Signifer", "layout": "BILLET_OFFSETS", "location": { "row": 29, "col": 7, "sheetName": "VI First Cohort" } },
+              { "rank": "Tesserarius", "title": "First Aquilia & Bellum Tesserarius", "layout": "BILLET_NCO_OFFSETS", "location": { "row": 7, "col": 4 } },
+              { "rank": "Tesserarius", "title": "First Caesar & Dominus Tesserarius", "layout": "BILLET_NCO_OFFSETS", "location": { "row": 7, "col": 16 } }
+            ],
+            "children": [
+              { "name": "Aquilia Contubernium", "shortcuts": ["VI 1A"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 4 }, "useSlotsFrom": "STANDARD_CONTUBERNIUM" },
+              { "name": "Bellum Contubernium", "shortcuts": ["VI 1B"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 4 }, "useSlotsFrom": "CONTUBERNIUM_LOW" },
+              { "name": "Caesar Contubernium", "shortcuts": ["VI 1C"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 16 }, "useSlotsFrom": "STANDARD_CONTUBERNIUM" },
+              { "name": "Dominus Contubernium", "shortcuts": ["VI 1D"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 16 }, "useSlotsFrom": "CONTUBERNIUM_LOW" }
+            ]
+          },
+          {
+            "name": "Second Century", "sheetName": "VI I.C. 2C",
+            "slots": [
+              { "rank": "Centurion", "layout": "BILLET_OFFSETS", "location": { "row": 21, "col": 25, "sheetName": "VI First Cohort" } },
+              { "rank": "Optio", "layout": "BILLET_OFFSETS", "location": { "row": 25, "col": 25, "sheetName": "VI First Cohort" } },
+              { "rank": "Signifer", "layout": "BILLET_OFFSETS", "location": { "row": 29, "col": 25, "sheetName": "VI First Cohort" } },
+              { "rank": "Tesserarius", "title": "Second Aquilia & Bellum Tesserarius", "layout": "BILLET_NCO_OFFSETS", "location": { "row": 7, "col": 4 } },
+              { "rank": "Tesserarius", "title": "Second Caesar & Dominus Tesserarius", "layout": "BILLET_NCO_OFFSETS", "location": { "row": 7, "col": 16 } }
+            ],
+            "children": [
+              { "name": "Aquilia Contubernium", "shortcuts": ["VI 2A"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 4 }, "useSlotsFrom": "STANDARD_CONTUBERNIUM" },
+              { "name": "Bellum Contubernium", "shortcuts": ["VI 2B"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 4 }, "useSlotsFrom": "CONTUBERNIUM_LOW" },
+              { "name": "Caesar Contubernium", "shortcuts": ["VI 2C"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 16 }, "useSlotsFrom": "STANDARD_CONTUBERNIUM" },
+              { "name": "Dominus Contubernium", "shortcuts": ["VI 2D"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 16 }, "useSlotsFrom": "CONTUBERNIUM_LOW" }
+            ]
+          },
+          {
+            "name": "Praetorian Century", "sheetName": "VI I.C. PC",
+            "slots": [
+              { "rank": "Centurion", "layout": "BILLET_OFFSETS", "location": { "row": 21, "col": 16, "sheetName": "VI First Cohort" } },
+              { "rank": "Optio", "layout": "BILLET_OFFSETS", "location": { "row": 25, "col": 16, "sheetName": "VI First Cohort" } },
+              { "rank": "Signifer", "layout": "BILLET_OFFSETS", "location": { "row": 29, "col": 16, "sheetName": "VI First Cohort" } },
+              { "rank": "Tesserarius", "title": "Praetorian Olympus Tesserarius", "layout": "BILLET_NCO_OFFSETS", "location": { "row": 7, "col": 4 } },
+              { "rank": "Tesserarius", "title": "Praetorian Cerberus Tesserarius", "layout": "BILLET_NCO_OFFSETS", "location": { "row": 7, "col": 16 } }
+            ],
+            "children": [
+              { "name": "Servius Auxiliary", "shortcuts": ["VI S"], "sheetName": "VI I.C. PC S", "layout": "SERVIUS_OFFSETS", "location": { "startCol": 3 }, "useSlotsFrom": "SERVIUS_CONTUBERNIUM" },
+              { "name": "Olympus", "shortcuts": ["VI O"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 4 }, "useSlotsFrom": "OLYMPUS_CONTUBERNIUM" },
+              { "name": "Cerberus", "shortcuts": ["VI CB"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 16 }, "useSlotsFrom": "OLYMPUS_CONTUBERNIUM" },
+              { "name": "Augustii Evocatii", "shortcuts": ["VI AU"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 4 }, "useSlotsFrom": "AUGUSTII_CONTUBERNIUM" }
+            ]
+          }]
         },
         {
-          "layout": "BILLET_OFFSETS",
-          "location": {
-            "col": 16,
-            "row": 14
+          "name": "Second Cohort", "sheetName": "VI Second Cohort",
+          "slots": [
+            { "rank": "Praefectus", "layout": "BILLET_OFFSETS", "location": { "row": 6, "col": 16 } },
+            { "rank": "Primus Pilus", "layout": "BILLET_OFFSETS", "location": { "row": 10, "col": 16 } },
+            { "rank": "Aquilifer", "layout": "BILLET_OFFSETS", "location": { "row": 14, "col": 16 } }
+          ],
+          "children": [{
+            "name": "Third Century", "sheetName": "VI II.C. 3C",
+            "slots": [
+              { "rank": "Centurion", "layout": "BILLET_OFFSETS", "location": { "row": 21, "col": 7, "sheetName": "VI Second Cohort" } },
+              { "rank": "Optio", "layout": "BILLET_OFFSETS", "location": { "row": 25, "col": 7, "sheetName": "VI Second Cohort" } },
+              { "rank": "Signifer", "layout": "BILLET_OFFSETS", "location": { "row": 29, "col": 7, "sheetName": "VI Second Cohort" } },
+              { "rank": "Tesserarius", "title": "Third Aquilia & Bellum Tesserarius", "layout": "BILLET_NCO_OFFSETS", "location": { "row": 7, "col": 4 } },
+              { "rank": "Tesserarius", "title": "Third Caesar & Dominus Tesserarius", "layout": "BILLET_NCO_OFFSETS", "location": { "row": 7, "col": 16 } }
+            ],
+            "children": [
+              { "name": "Aquilia Contubernium", "shortcuts": ["VI 3A"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 4 }, "useSlotsFrom": "STANDARD_CONTUBERNIUM" },
+              { "name": "Bellum Contubernium", "shortcuts": ["VI 3B"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 4 }, "useSlotsFrom": "CONTUBERNIUM_LOW" },
+              { "name": "Caesar Contubernium", "shortcuts": ["VI 3C"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 16 }, "useSlotsFrom": "STANDARD_CONTUBERNIUM" },
+              { "name": "Dominus Contubernium", "shortcuts": ["VI 3D"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 16 }, "useSlotsFrom": "CONTUBERNIUM_LOW" }
+            ]
           },
-          "rank": "Primus Pilus",
-          "title": "Primus Pilus"
-        },
-        {
-          "layout": "BILLET_OFFSETS",
-          "location": {
-            "col": 16,
-            "row": 18
-          },
-          "rank": "Aquilifer",
-          "title": "Aquilifer"
+          {
+            "name": "Fourth Century", "sheetName": "VI II.C. 4C",
+            "slots": [
+              { "rank": "Centurion", "layout": "BILLET_OFFSETS", "location": { "row": 21, "col": 25, "sheetName": "VI Second Cohort" } },
+              { "rank": "Optio", "layout": "BILLET_OFFSETS", "location": { "row": 25, "col": 25, "sheetName": "VI Second Cohort" } },
+              { "rank": "Signifer", "layout": "BILLET_OFFSETS", "location": { "row": 29, "col": 25, "sheetName": "VI Second Cohort" } },
+              { "rank": "Tesserarius", "title": "Fourth Aquilia & Bellum Tesserarius", "layout": "BILLET_NCO_OFFSETS", "location": { "row": 7, "col": 4 } },
+              { "rank": "Tesserarius", "title": "Fourth Caesar & Dominus Tesserarius", "layout": "BILLET_NCO_OFFSETS", "location": { "row": 7, "col": 16 } }
+            ],
+            "children": [
+              { "name": "Aquilia Contubernium", "shortcuts": ["VI 4A"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 4 }, "useSlotsFrom": "STANDARD_CONTUBERNIUM" },
+              { "name": "Bellum Contubernium", "shortcuts": ["VI 4B"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 4 }, "useSlotsFrom": "CONTUBERNIUM_LOW" },
+              { "name": "Caesar Contubernium", "shortcuts": ["VI 4C"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 16 }, "useSlotsFrom": "STANDARD_CONTUBERNIUM" },
+              { "name": "Dominus Contubernium", "shortcuts": ["VI 4D"], "layout": "SQUAD_OFFSETS", "location": { "startCol": 16 }, "useSlotsFrom": "CONTUBERNIUM_LOW" }
+            ]
+          }]
         }]
-      }
-    ],
-      
+      }]
+    ,
       "layout": "BILLET_OFFSETS",
       "name": "Rome HQ",
       "eventLogStart": {
@@ -733,8 +284,7 @@
           "col": 17,
           "row": 6
         }],
-        "rank": "Consul",
-        "title": "Consul"
+        "rank": "Consul"
       },
       {
         "count": 5,

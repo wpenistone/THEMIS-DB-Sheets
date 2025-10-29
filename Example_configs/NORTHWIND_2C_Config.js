@@ -34,11 +34,10 @@ const THEMIS_CONFIG = {
     },
     "SLOT_BLUEPRINTS": {
         "STANDARD_SQUAD": [
-            { "rank": "Staff Sergeant", "location": { "rows": [9] }, "layout": "SQUAD_OFFSETS_NCO" },
-            { "rank": "Colour Sergeant", "location": { "rows": [10] }, "layout": "SQUAD_OFFSETS_NCO" },
+            { "rank": "Staff Sergeant", "location": { "row": 9 }, "layout": "SQUAD_OFFSETS_NCO" },
+            { "rank": "Colour Sergeant", "location": { "row": 10 }, "layout": "SQUAD_OFFSETS_NCO" },
             { "rank": "Sergeant", "count": 2, "location": { "rows": [12, 13] }, "layout": "SQUAD_OFFSETS_NCO" },
             { "rank": "Corporal", "count": 3, "location": { "rows": [15, 16, 17] }, "layout": "SQUAD_OFFSETS_NCO" },
-            
             {
                 "ranks": ["Private", "Private First Class", "Lance Corporal"],
                 "count": 21,
@@ -59,27 +58,30 @@ const THEMIS_CONFIG = {
                     "eventLogStart": { "row": 6, "col": 4 },
                     "logShortSectionName": true,
                     "slots": [
-                        { "layout": "BILLET_OFFSETS", "location": { "col": 7, "row": 22, "sheetName": "Headquarters" }, "rank": "Lieutenant", "title": "Lieutenant" },
-                        { "layout": "BILLET_OFFSETS", "location": { "col": 7, "row": 26, "sheetName": "Headquarters" }, "rank": "Ensign", "title": "Ensign" },
-                        { "layout": "BILLET_OFFSETS", "location": { "col": 7, "row": 30, "sheetName": "Headquarters" }, "rank": "Warrant Officer", "title": "Warrant Officer" }
+                        { "layout": "BILLET_OFFSETS", "location": { "col": 7, "row": 22, "sheetName": "Headquarters" }, "rank": "Lieutenant"},
+                        { "layout": "BILLET_OFFSETS", "location": { "col": 7, "row": 26, "sheetName": "Headquarters" }, "rank": "Ensign"},
+                        { "layout": "BILLET_OFFSETS", "location": { "col": 7, "row": 30, "sheetName": "Headquarters" }, "rank": "Warrant Officer"}
                     ]
                 },
                 {
                     "children": [
                         { "location": { "startCol": 6 }, "name": "Second Alpha", "shortcuts": ["2A"], "useSlotsFrom": "STANDARD_SQUAD" },
-                        { "location": { "startCol": 18 }, "name": "Second Bravo", "shortcuts": ["2B"], "useSlotsFrom": "STANDARD_SQUAD" }
+                        { "location": { "startCol": 18 }, "name": "Second Bravo", "shortcuts": ["2B"], "useSlotsFrom": "STANDARD_SQUAD" },
+                        { "location": { "startCol": 30 }, "name": "Second Charlie", "shortcuts": ["2C"], "useSlotsFrom": "STANDARD_SQUAD" }
                     ],
                     "name": "Second Platoon", "shortcuts": ["2P"], "sheetName": "Second Platoon",
                     "eventLogStart": { "row": 6, "col": 11 },
                     "logShortSectionName": true,
                     "slots": [
-                        { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 22, "sheetName": "Headquarters" }, "rank": "Lieutenant", "title": "Lieutenant" },
-                        { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 26, "sheetName": "Headquarters" }, "rank": "Ensign", "title": "Ensign" },
-                        { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 30, "sheetName": "Headquarters" }, "rank": "Warrant Officer", "title": "Warrant Officer" }
+                        { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 22, "sheetName": "Headquarters" }, "rank": "Lieutenant"},
+                        { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 26, "sheetName": "Headquarters" }, "rank": "Ensign"},
+                        { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 30, "sheetName": "Headquarters" }, "rank": "Warrant Officer" }
                     ]
                 }
             ],
-            "name": "Company Headquarters", "sheetName": "Headquarters",
+            "name": "Company Headquarters", 
+            "shortcuts": ["HQ"],
+            "sheetName": "Headquarters",
             "eventLogStart": { "row": 6, "col": 25 },
             "eventLogColumns": {
                 "DAY": 0,
@@ -87,9 +89,9 @@ const THEMIS_CONFIG = {
                 "TYPE": 2
             },
             "slots": [
-                { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 7 }, "rank": "Major", "title": "Major" },
-                { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 11 }, "rank": "Captain", "title": "Captain" },
-                { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 15 }, "rank": "Company Colour Sergeant", "title": "Company Colour Sergeant" }
+                { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 7 }, "rank": "Major" },
+                { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 11 }, "rank": "Captain" },
+                { "layout": "BILLET_OFFSETS", "location": { "col": 16, "row": 15 }, "rank": "Company Sergeant Major" }
             ]
         }
     ],
@@ -98,7 +100,7 @@ const THEMIS_CONFIG = {
         { "abbr": "PVT", "name": "Private" }, { "abbr": "PFC", "name": "Private First Class" }, { "abbr": "LCPL", "name": "Lance Corporal" },
         { "abbr": "CPL", "name": "Corporal" }, { "abbr": "SGT", "name": "Sergeant" }, { "abbr": "CSGT", "name": "Colour Sergeant" },
         { "abbr": "SSGT", "name": "Staff Sergeant" }, { "abbr": "WO", "name": "Warrant Officer" }, { "abbr": "ENS", "name": "Ensign" },
-        { "abbr": "LT", "name": "Lieutenant" }, { "abbr": "CCS", "name": "Company Colour Sergeant" }, { "abbr": "CPT", "name": "Captain" }, { "abbr": "MJR", "name": "Major" }
+        { "abbr": "LT", "name": "Lieutenant" }, { "abbr": "CSM", "name": "Company Sergeant Major" }, { "abbr": "CPT", "name": "Captain" }, { "abbr": "MJR", "name": "Major" }
     ],
     "RECRUITER_MIN_RANK": "Staff Sergeant",
     "RECRUITMENT_LOG_SHEET_NAME": "Recruitment Logbook",
@@ -115,7 +117,7 @@ const THEMIS_CONFIG = {
         { "name": "Raid", "aliases": [] }, { "name": "Patrol", "aliases": ["Recon"] }, { "name": "Fort Event", "aliases": [] },
         { "name": "Miscellaneous Event", "aliases": ["Misc Event"] }, { "name": "Mandatory Event", "aliases": ["MA"] }, { "name": "Practise Raid", "aliases": ["PR", "Practice Raid"] }
     ],
-    "TIME_IN_RANK_REQUIREMENTS": { "COMPANY COLOUR SERGEANT": 30, "COLOUR SERGEANT": 7, "STAFF SERGEANT": 14, "WARRANT OFFICER": 18, "ENSIGN": 24, "LIEUTENANT": 38 },
+    "TIME_IN_RANK_REQUIREMENTS": { "Company Sergeant Major": 30, "COLOUR SERGEANT": 7, "STAFF SERGEANT": 14, "WARRANT OFFICER": 18, "ENSIGN": 24, "LIEUTENANT": 38 },
     "WEBHOOK_URL": "",
     "THEMIS_CLIENT_API_KEY": "",
     "LOA_MENTION_ROLE_ID": "your_role_id",
