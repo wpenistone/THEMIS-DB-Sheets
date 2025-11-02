@@ -716,24 +716,90 @@ function _parseLoaNote(note) {
         return null;
     }
 
-    const regex = /Start Date: (.*?)\nEnd Date: (.*?)\nReason: ([\s\S]*?)\n\u200B\nBy: (.*)/;
-    const match = note.match(regex);
+    const mainRegex = /Start Date: (.*?)\nEnd Date: (.*?)\nReason: ([\s\S]*)/;
+    let match = note.match(mainRegex);
 
     if (match) {
+        const startDate = match[1].trim();
+        const endDate = match[2].trim();
+        let fullReasonBlock = match[3].trim();
+        let reason = fullReasonBlock;
+        let setBy = 'N/A';
+        const bySeparatorIndex = fullReasonBlock.search(/\n\s*(\u200B\s*)?\n*\s*By:/);
+
+        if (bySeparatorIndex !== -1) {
+            reason = fullReasonBlock.substring(0, bySeparatorIndex).trim();
+            const byLine = fullReasonBlock.substring(bySeparatorIndex).trim();
+            setBy = byLine.replace(/(\u200B\s*)?\n*\s*By:\s*/, '').trim();
+        }
+        return { startDate, endDate, reason, setBy };
+    }
+
+    const dateRegex = /\b((\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})|(\d{4}[\/-]\d{1,2}[\/-]\d{1,2}))\b/g;
+    const dateMatches = [...note.matchAll(dateRegex)];
+    
+    const validDates = dateMatches.map(m => {
+        const dateString = m[0].trim();
+        const formatPriority = [THEMIS_CONFIG.DATE_FORMAT, "MM/DD/YY", "DD/MM/YY", "YYYY-MM-DD", "MM/DD/YYYY"];
+        const uniqueFormats = [...new Set(formatPriority)];
+
+        for (const format of uniqueFormats) {
+            try {
+                let parts;
+                let month, day, year;
+                if (format.includes('/')) parts = dateString.split('/');
+                else if (format.includes('-')) parts = dateString.split('-');
+                else continue;
+                if (parts.length !== 3) continue;
+
+                switch (format) {
+                    case "DD/MM/YY": case "DD/MM/YYYY":
+                        day = parseInt(parts[0], 10); month = parseInt(parts[1], 10) - 1; year = parseInt(parts[2], 10); break;
+                    case "YYYY-MM-DD":
+                        year = parseInt(parts[0], 10); month = parseInt(parts[1], 10) - 1; day = parseInt(parts[2], 10); break;
+                    case "MM/DD/YY": case "MM/DD/YYYY":
+                    default:
+                        month = parseInt(parts[0], 10) - 1; day = parseInt(parts[1], 10); year = parseInt(parts[2], 10); break;
+                }
+
+                if (isNaN(day) || isNaN(month) || isNaN(year)) continue;
+                if (year < 100) year += 2000;
+                
+                const date = new Date(Date.UTC(year, month, day));
+                if (date.getUTCFullYear() === year && date.getUTCMonth() === month && date.getUTCDate() === day) {
+                    return date; 
+                }
+            } catch (e) {}
+        }
+        return null; 
+    }).filter(d => d !== null); 
+
+    if (validDates.length >= 2) {
+        validDates.sort((a, b) => a.getTime() - b.getTime()); 
+
+        const startDateObj = validDates[0];
+        const endDateObj = validDates[1];
+
+        let remainingText = note;
+        dateMatches.forEach(m => { remainingText = remainingText.replace(m[0], ''); });
+        let reason = remainingText.replace(/Start Date:|End Date:|Reason:|By:/gi, '').replace(/\n\s*\n/g, '\n').trim();
+        let setBy = 'N/A';
+        const byMatch = reason.match(/(.*?)\s*By:\s*(.*)/is);
+        if (byMatch) {
+            reason = byMatch[1].trim();
+            setBy = byMatch[2].trim();
+        }
+
         return {
-            startDate: match[1].trim(),
-            endDate: match[2].trim(),
-            reason: match[3].trim(),
-            setBy: match[4].trim()
+            startDate: getFormattedDateString(startDateObj),
+            endDate: getFormattedDateString(endDateObj),
+            reason: reason || "No reason provided.",
+            setBy: setBy
         };
     }
 
     if (note.trim().startsWith('{')) {
-        try {
-            return JSON.parse(note);
-        } catch (e) {
-
-        }
+        try { return JSON.parse(note); } catch (e) { }
     }
 
     return null;
