@@ -711,6 +711,7 @@ function _getSheetId(ss, sheetName) {
     throw new Error(`Sheet with name "${sheetName}" not found.`);
 }
 
+
 function _parseLoaNote(note) {
     if (!note || !note.trim()) {
         return null;
@@ -2752,7 +2753,8 @@ function Hebe_Initiat(details, bypassConfirmation = false, grantAccess = false) 
                 sortedMembers: membersToSort,
                 layout: layout,
                 possibleCoords: possibleCoords,
-                sheetId: sheetId
+                sheetId: sheetId,
+                slotConfig: rankSlot
             }, true);
             allRequests.push(...writeRequests);
             newIdentifier = determinedIdentifier;
@@ -2950,13 +2952,13 @@ function _getWriteSinglePersonRequests(personData, targetRow, targetCol, layout,
     });
     return requests;
 }
-function _Moirae_Pangunt_Fila({ sortedMembers, layout, possibleCoords, sheetId }, isRecruit = false) {
+function _Moirae_Pangunt_Fila({ sortedMembers, layout, possibleCoords, sheetId, slotConfig }, isRecruit = false) {
     const allRequests = [];
 
     for (const coord of possibleCoords) {
 
         const currentSheetId = _getSheetId(SpreadsheetApp.getActiveSpreadsheet(), coord.sheet);
-        allRequests.push(..._getClearSinglePersonRequests(coord.row, coord.col, layout, currentSheetId));
+        allRequests.push(..._getClearSinglePersonRequests(coord.row, coord.col, layout, currentSheetId, slotConfig));
     }
 
     const sortedDataToWrite = _Dike_Ordinat_Socios(sortedMembers);
@@ -3036,7 +3038,8 @@ function _performMove(personDataToMove, sourceIdentifier, newLocationPath, newRa
         sortedMembers: destMembersToSort,
         layout: destLayout,
         possibleCoords: destPossibleCoords,
-        sheetId: destSheetId
+        sheetId: destSheetId,
+        slotConfig: destSlot
     });
     allRequests.push(...writeRequests);
 
@@ -3065,7 +3068,8 @@ function _performMove(personDataToMove, sourceIdentifier, newLocationPath, newRa
             sortedMembers: remainingMembers,
             layout: sourceLayout,
             possibleCoords: sourcePossibleCoords,
-            sheetId: sourceSheetId
+            sheetId: sourceSheetId,
+            slotConfig: sourceConfig.slot
         });
         allRequests.push(...resortRequests);
     } else { 
@@ -3257,7 +3261,8 @@ function Dike_Iudicat(sourceIdentifier, newRank, newLocation, ubtApproved, email
                 sortedMembers: membersInSlot,
                 layout: _Themis_Praescribit_Legem(sourceConfig),
                 possibleCoords: possibleCoords,
-                sheetId: _getSheetId(ss, sourceConfig.sheetName)
+                sheetId: _getSheetId(ss, sourceConfig.sheetName),
+                slotConfig: sourceConfig.slot
             });
 
             if (resortRequests.length > 0) {
@@ -3351,7 +3356,7 @@ function Atropos_Secat(sourceIdentifier, revokeAccess = false) {
                 possibleCoords.some(coord => `${coord.sheet}|${coord.row}|${coord.col}` === p.sourceIdentifier)
             );
 
-            const { requests: resortRequests } = _Moirae_Pangunt_Fila({ sortedMembers: remainingMembers, layout: sourceLayout, possibleCoords: possibleCoords, sheetId: sourceSheetId });
+            const { requests: resortRequests } = _Moirae_Pangunt_Fila({ sortedMembers: remainingMembers, layout: sourceLayout, possibleCoords: possibleCoords, sheetId: sourceSheetId, slotConfig: slot });
             allRequests.push(...resortRequests);
 
             sortedAndUpdatedMembers = _Dike_Ordinat_Socios(remainingMembers).map((member, index) => {
