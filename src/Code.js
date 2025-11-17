@@ -2887,7 +2887,7 @@ function _getWriteSinglePersonRequests(personData, targetRow, targetCol, layout,
                 break;
             case 'joinDate':
                 const joinDateString = personData.joinDate;
-                const dateObject = joinDateString ? new Date(joinDateString) : new Date();
+                const dateObject = joinDateString ? new Date(joinDateString.replace(/-/g, '/')) : new Date();
                 if (isNaN(dateObject.getTime())) {
                     cellData = { userEnteredValue: { stringValue: getFormattedDateString(new Date()) } };
                 } else {
