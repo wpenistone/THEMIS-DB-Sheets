@@ -1,4 +1,4 @@
-const VERSION = "2.5x";
+const VERSION = "2.5";
 const _sheetIdCache = {};
 let a_hasUrlFetchPermission = null;
 let a_configIndexes = null;
@@ -3473,6 +3473,6 @@ function _Nemesis_Verificat(sourceFromCache, ss) {
 
   if (liveUsername !== player.trim()) {
     _Lethe_Delet();
-    throw new Error(`Data mismatch detected. You tried to act on "${player}", but "${liveUsername || 'an empty cell'}" is now in that slot. The spreadsheet has been updated. Please refresh and try again.`);
+    throw new Error(`Data mismatch detected. You tried to act on "${player}", but "${liveUsername || 'an empty cell'}" is now in that slot; It appears the spreadsheet has been updated, please refresh and try again.`);
   }
 }
